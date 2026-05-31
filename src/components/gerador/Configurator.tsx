@@ -1,5 +1,6 @@
 "use client"
 
+import { motion, useReducedMotion } from 'framer-motion'
 import { useBudget } from '../../context/budget-context'
 import { BRACKETS, bracketIndex, metaFor, CategoryOption, CategorySelector } from '../../data/pricebook'
 
@@ -25,18 +26,23 @@ interface OptionButtonProps {
 }
 
 function OptionButton({ catId, sel, value, selected, onClick }: OptionButtonProps) {
+  const reduced = useReducedMotion()
   const meta = metaFor(catId, sel.key, value.v)
   const modifier = sel.type === 'radio' ? 'radio' : 'checkbox'
+
   return (
-    <button
+    <motion.button
       type="button"
       className={`btn-option ${modifier}${selected ? ' selected' : ''}`}
       onClick={onClick}
+      whileHover={reduced ? {} : { scale: 1.02 }}
+      whileTap={reduced ? {} : { scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 22 }}
     >
       <span className="btn-option__check">{CheckIcon}</span>
       <span className="btn-option__label">{value.label}</span>
       {meta && <span className="btn-option__meta">{meta}</span>}
-    </button>
+    </motion.button>
   )
 }
 

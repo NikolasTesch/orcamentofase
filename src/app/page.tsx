@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BudgetProvider } from '../context/BudgetContext'
 import { useBudget } from '../context/budget-context'
 import { fmtBRL } from '../data/pricebook'
@@ -95,6 +96,7 @@ function buildWhatsApp({ client, cart, cond, totals }: any) {
 
 function GeneratorBody() {
   const budget = useBudget()
+  const reduced = useReducedMotion()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -138,8 +140,19 @@ function GeneratorBody() {
           <div className="panel cat-tabs-wrap">
             <CategoryTabs />
           </div>
-          <Configurator />
-          <Simulator />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={budget.activeCat}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 'inherit' }}
+            >
+              <Configurator />
+              <Simulator />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* checkout */}
@@ -198,7 +211,19 @@ function GeneratorBody() {
 
       {/* mobile */}
       <button type="button" className="cart-fab no-print" onClick={() => setDrawerOpen(true)}>
-        {FabIcon}Orçamento <span className="badge">{budget.cart.length}</span>
+        {FabIcon}Orçamento{' '}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={budget.cart.length}
+            className="badge"
+            initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 18 }}
+          >
+            {budget.cart.length}
+          </motion.span>
+        </AnimatePresence>
       </button>
       <div className="drawer-backdrop no-print" onClick={() => setDrawerOpen(false)} />
 
