@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Pricebook {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model Budget {
+  id                 String           @id @default(uuid())
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  clientName         String
+  clientPhone        String
+  clientPartnership  String
+  delivery           Int
+  validity           Int
+  subtotal           Float
+  partnerDiscount    Float
+  additionalDiscount Float
+  netTotal           Float
+  entryValue         Float
+  status             String           @default("open") // "open", "won", "lost"
+  items              BudgetLineItem[]
+}
+
+model BudgetLineItem {
+  id       String @id @default(uuid())
+  budgetId String
+  budget   Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  catId    String
+  kind     String
+  desc     String
+  qty      Int
+  unit     Float
+  snap     Json   // Stores detailed item snapshot configuration
+}

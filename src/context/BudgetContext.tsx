@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState, ReactNode } from 'react'
+import { useCallback, useMemo, useState, useEffect, ReactNode } from 'react'
 import {
   BudgetContext,
   CartItem,
@@ -15,7 +15,9 @@ import {
   computeUnit,
   partnerDiscount,
   PARTNERS,
+  updatePBFromServer,
 } from '../data/pricebook'
+import { updateSizesFromServer } from '../data/sizes'
 
 const clone = <T,>(o: T): T => JSON.parse(JSON.stringify(o))
 const uid = () => Date.now() + '' + Math.random().toString(36).slice(2, 6)
@@ -45,6 +47,30 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   const [client, setClient] = useState<ClientData>({ name: '', phone: '', partnership: 'Nenhuma' })
   const [disc, setDisc] = useState<DiscountData>({ type: 'percentage', value: 0 })
   const [cond, setCond] = useState<ConditionsData>({ delivery: 30, validity: 7 })
+  const [attachSizes, setAttachSizes] = useState<boolean>(false)
+  const [selectedSizeChartId, setSelectedSizeChartId] = useState<string>('camisa_normal')
+
+  useEffect(() => {
+    // Sincroniza pricebook
+    fetch('/api/pricebook')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          updatePBFromServer(res.data)
+        }
+      })
+      .catch((err) => console.error('Error fetching pricebook:', err))
+
+    // Sincroniza tamanhos (sizes)
+    fetch('/api/sizes')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          updateSizesFromServer(res.data)
+        }
+      })
+      .catch((err) => console.error('Error fetching sizes:', err))
+  }, [])
 
   const cur = config[activeCat]
   const curCategory = getCat(activeCat)
@@ -162,6 +188,92 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     return { sub, partnerDisc, add, net, entry, hasAbadaExempt }
   }, [cart, client.partnership, disc])
 
+  const saveBudgetToServer = useCallback(
+    async (status: 'open' | 'won' | 'lost' = 'open') => {
+      try {
+        const response = await fetch('/api/budgets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientName: client.name || 'Cliente sem nome',
+            clientPhone: client.phone || '',
+            clientPartnership: client.partnership,
+            delivery: cond.delivery,
+            validity: cond.validity,
+            subtotal: totals.sub,
+            partnerDiscount: totals.partnerDisc,
+            additionalDiscount: totals.add,
+            netTotal: totals.net,
+            entryValue: totals.entry,
+            status,
+            items: cart.map((it) => ({
+              catId: it.catId,
+              kind: it.kind,
+              desc: it.desc,
+              qty: it.qty,
+              unit: it.unit,
+              snap: it.snap,
+            })),
+          }),
+        })
+
+        const res = await response.json()
+        if (res.success) {
+          return { success: true, data: res.data }
+        } else {
+          return { success: false, error: res.error || 'Failed to save budget' }
+        }
+      } catch (error: any) {
+        console.error('Error saving budget to server:', error)
+        return { success: false, error: error.message || 'Error connecting to server' }
+      }
+    },
+    [client, cond, totals, cart],
+  )
+
+  // Auto-detect best match size chart when cart changes
+  useEffect(() => {
+    if (cart.length === 0) return
+
+    // Detect first item that has specific category
+    const socialItem = cart.find(it => it.catId === 'social')
+    if (socialItem) {
+      setSelectedSizeChartId('camisa_social')
+      return
+    }
+
+    const pantsItem = cart.find(it => 
+      it.catId === 'tactel_helanca' && (it.snap.peca === 'calca' || it.snap.peca === 'short' || it.snap.peca === 'bermuda')
+    )
+    if (pantsItem) {
+      setSelectedSizeChartId('calca_normal')
+      return
+    }
+
+    const infantilItem = cart.find(it => 
+      it.snap.faixa === 'Infantil' || it.desc.toLowerCase().includes('infantil')
+    )
+    if (infantilItem) {
+      setSelectedSizeChartId('camisa_infantil')
+      return
+    }
+
+    const babyLookItem = cart.find(it => 
+      it.desc.toLowerCase().includes('baby look') || it.desc.toLowerCase().includes('feminino')
+    )
+    if (babyLookItem) {
+      setSelectedSizeChartId('baby_look')
+      return
+    }
+
+    const shirtItem = cart.find(it => 
+      ['kit_esportivo', 'camisa_malha', 'estampa_total', 'abada', 'camisa_pp'].includes(it.catId)
+    )
+    if (shirtItem) {
+      setSelectedSizeChartId('camisa_normal')
+    }
+  }, [cart])
+
   const value: BudgetContextValue = {
     // estado
     activeCat,
@@ -174,6 +286,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     cond,
     totals,
     partners: Object.keys(PARTNERS),
+    attachSizes,
+    selectedSizeChartId,
     // ações de configuração
     setActiveCat,
     selectRadio,
@@ -190,8 +304,11 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     setClient: (patch) => setClient((c) => ({ ...c, ...patch })),
     setDisc: (patch) => setDisc((d) => ({ ...d, ...patch })),
     setCond: (patch) => setCond((c) => ({ ...c, ...patch })),
+    setAttachSizes,
+    setSelectedSizeChartId,
     // helpers
     partnerInfo,
+    saveBudgetToServer,
   }
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>

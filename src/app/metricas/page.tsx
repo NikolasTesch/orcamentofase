@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState, useMemo, ReactNode } from 'react'
 import AppHeader from '../../components/app/AppHeader'
 
 /* Dados ilustrativos (porta de metrics.js). */
@@ -59,7 +60,7 @@ interface KpiData {
   value: string
   delta: string
   cmp: string
-  icon: JSX.Element
+  icon: ReactNode
 }
 const KPIS: KpiData[] = [
   { label: 'Orçamentos gerados', value: '184', delta: '+12%', cmp: 'vs. abril', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></> },
@@ -74,10 +75,15 @@ const UpArrow = (
   </svg>
 )
 
-function Donut() {
+interface DonutProps {
+  activeMix: MixData[]
+  totalCount: string
+}
+
+function Donut({ activeMix, totalCount }: DonutProps) {
   const C = 2 * Math.PI * 52
   let acc = 0
-  const segs = mix.map((s) => {
+  const segs = activeMix.map((s) => {
     const dash = (s.v / 100) * C
     const seg = (
       <circle
@@ -100,7 +106,7 @@ function Donut() {
     <svg width="132" height="132" viewBox="0 0 132 132">
       {segs}
       <text x="66" y="61" textAnchor="middle" fill="var(--text-primary)" fontFamily="var(--font-display)" fontWeight="800" fontSize="22">
-        184
+        {totalCount}
       </text>
       <text x="66" y="80" textAnchor="middle" fill="var(--text-muted)" fontFamily="var(--font-mono)" fontSize="9">
         orçamentos
@@ -110,6 +116,42 @@ function Donut() {
 }
 
 export default function MetricsPage() {
+  const [loading, setLoading] = useState(true)
+  const [dbData, setDbData] = useState<any>(null)
+
+  useEffect(() => {
+    fetch('/api/metrics')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && !res.empty && res.data) {
+          setDbData(res.data)
+        }
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('Error fetching metrics from database, using mocks:', err)
+        setLoading(false)
+      })
+  }, [])
+
+  const activeKPIS = useMemo(() => {
+    if (!dbData) return KPIS
+    return KPIS.map((k) => {
+      const dbKpi = dbData.kpis.find((dk: any) => dk.label === k.label)
+      return {
+        ...k,
+        value: dbKpi ? dbKpi.value : k.value,
+        delta: dbKpi ? '' : k.delta,
+        cmp: dbKpi ? 'no banco' : k.cmp,
+      }
+    })
+  }, [dbData])
+
+  const activeRecent = dbData ? dbData.recent : recent
+  const activeMix = dbData ? dbData.mix : mix
+  const activeRank = dbData ? dbData.rank : rank
+  const totalCount = dbData ? dbData.kpis.find((k: any) => k.label === 'Orçamentos gerados')?.value || '0' : '184'
+
   const max = Math.max(...months.map((m) => m.v))
   const periodSelect = (
     <select className="select" style={{ width: 'auto' }} defaultValue="Últimos 6 meses">
@@ -126,7 +168,7 @@ export default function MetricsPage() {
       <div className="admin-body">
         <div className="admin-head">
           <div>
-            <p className="eyebrow">Visão geral · maio 2026</p>
+            <p className="eyebrow">Visão geral · tempo real</p>
             <h1>Desempenho comercial</h1>
             <p>
               Acompanhe orçamentos emitidos, ticket médio, taxa de fechamento e faturamento estimado
@@ -135,117 +177,126 @@ export default function MetricsPage() {
           </div>
         </div>
 
-        <div className="kpi-grid">
-          {KPIS.map((k) => (
-            <div className="panel kpi" key={k.label}>
-              <div className="kpi__label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {k.icon}
-                </svg>
-                {k.label}
-              </div>
-              <div className="kpi__value">{k.value}</div>
-              <div className="kpi__delta up">
-                {UpArrow}
-                {k.delta} <span>{k.cmp}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="metrics-2col">
-          <div className="panel chart-card">
-            <div className="chart-card__head">
-              <h3>Faturamento por mês</h3>
-              <span className="meta">em R$ mil</span>
-            </div>
-            <div className="bars">
-              {months.map((m) => (
-                <div className="bar-col" key={m.m}>
-                  <div className="bar" style={{ height: `${((m.v / max) * 100).toFixed(1)}%` }}>
-                    <span className="bar__val">R$ {m.v}k</span>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+            Carregando métricas reais...
+          </div>
+        ) : (
+          <>
+            <div className="kpi-grid">
+              {activeKPIS.map((k) => (
+                <div className="panel kpi" key={k.label}>
+                  <div className="kpi__label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {k.icon}
+                    </svg>
+                    {k.label}
                   </div>
-                  <span className="lbl">{m.m}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="panel chart-card">
-            <div className="chart-card__head">
-              <h3>Mix por categoria</h3>
-              <span className="meta">% faturamento</span>
-            </div>
-            <div className="donut-wrap">
-              <Donut />
-              <div className="legend">
-                {mix.map((s) => (
-                  <div className="legend__row" key={s.nm}>
-                    <span className="legend__dot" style={{ background: s.c }} />
-                    <span className="nm">{s.nm}</span>
-                    <span className="vl">{s.v}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="metrics-2col">
-          <div className="panel chart-card">
-            <div className="chart-card__head">
-              <h3>Orçamentos recentes</h3>
-              <span className="meta">últimos 6</span>
-            </div>
-            <table className="mtable">
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Categoria</th>
-                  <th className="ar">Valor</th>
-                  <th className="ar">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((r) => (
-                  <tr key={r.cli}>
-                    <td>{r.cli}</td>
-                    <td>{r.cat}</td>
-                    <td className="num ar">{r.val}</td>
-                    <td className="ar">
-                      <span className={`status-dot ${r.st}`}>
-                        <i />
-                        {r.lbl}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="panel chart-card">
-            <div className="chart-card__head">
-              <h3>Categorias mais vendidas</h3>
-              <span className="meta">no período</span>
-            </div>
-            <div className="rank">
-              {rank.map((r, i) => (
-                <div className="rank__row" key={r.nm}>
-                  <span className="rank__pos">{i + 1}</span>
-                  <div className="rank__bar-wrap">
-                    <div className="rank__nm">
-                      {r.nm}
-                      <span className="v">{r.v}</span>
-                    </div>
-                    <div className="rank__track">
-                      <div className="rank__fill" style={{ width: `${r.pct}%` }} />
-                    </div>
+                  <div className="kpi__value">{k.value}</div>
+                  <div className={`kpi__delta ${k.delta ? 'up' : ''}`}>
+                    {k.delta && UpArrow}
+                    {k.delta || 'Sincronizado'} <span>{k.cmp}</span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+
+            <div className="metrics-2col">
+              <div className="panel chart-card">
+                <div className="chart-card__head">
+                  <h3>Faturamento por mês</h3>
+                  <span className="meta">em R$ mil</span>
+                </div>
+                <div className="bars">
+                  {months.map((m) => (
+                    <div className="bar-col" key={m.m}>
+                      <div className="bar" style={{ height: `${((m.v / max) * 100).toFixed(1)}%` }}>
+                        <span className="bar__val">R$ {m.v}k</span>
+                      </div>
+                      <span className="lbl">{m.m}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="panel chart-card">
+                <div className="chart-card__head">
+                  <h3>Mix por categoria</h3>
+                  <span className="meta">% faturamento</span>
+                </div>
+                <div className="donut-wrap">
+                  <Donut activeMix={activeMix} totalCount={totalCount} />
+                  <div className="legend">
+                    {activeMix.map((s: any) => (
+                      <div className="legend__row" key={s.nm}>
+                        <span className="legend__dot" style={{ background: s.c }} />
+                        <span className="nm">{s.nm}</span>
+                        <span className="vl">{s.v}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="metrics-2col">
+              <div className="panel chart-card">
+                <div className="chart-card__head">
+                  <h3>Orçamentos recentes</h3>
+                  <span className="meta">{dbData ? 'últimos cadastrados' : 'últimos 6'}</span>
+                </div>
+                <table className="mtable">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Categoria</th>
+                      <th className="ar">Valor</th>
+                      <th className="ar">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeRecent.map((r: any, idx: number) => (
+                      <tr key={`${r.cli}-${idx}`}>
+                        <td>{r.cli}</td>
+                        <td>{r.cat}</td>
+                        <td className="num ar">{r.val}</td>
+                        <td className="ar">
+                          <span className={`status-dot ${r.st}`}>
+                            <i />
+                            {r.lbl}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="panel chart-card">
+                <div className="chart-card__head">
+                  <h3>Categorias mais vendidas</h3>
+                  <span className="meta">no período</span>
+                </div>
+                <div className="rank">
+                  {activeRank.map((r: any, i: number) => (
+                    <div className="rank__row" key={r.nm}>
+                      <span className="rank__pos">{i + 1}</span>
+                      <div className="rank__bar-wrap">
+                        <div className="rank__nm">
+                          {r.nm}
+                          <span className="v">{r.v}</span>
+                        </div>
+                        <div className="rank__track">
+                          <div className="rank__fill" style={{ width: `${r.pct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
 }
+

@@ -45,6 +45,9 @@ export const metadata: Metadata = {
     index: false, // Área administrativa interna para vendedores
     follow: false,
   },
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({

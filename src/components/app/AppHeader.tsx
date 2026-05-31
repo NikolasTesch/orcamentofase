@@ -31,6 +31,11 @@ const NAV: NavItem[] = [
     icon: <path d="M3 6h18M3 12h18M3 18h18M8 3v18" />,
   },
   {
+    to: '/tamanhos',
+    label: 'Grade de tamanhos',
+    icon: <path d="M2 9h20v6H2zm4 0v3m4-3v6m4-6v3m4-3v6" strokeWidth="2" strokeLinecap="round" />,
+  },
+  {
     to: '/design-system',
     label: 'Design System',
     icon: (

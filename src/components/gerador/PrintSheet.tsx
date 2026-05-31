@@ -1,13 +1,21 @@
 "use client"
 
+import React from 'react'
 import { useBudget, CartItem } from '../../context/budget-context'
 import { fmtBRL } from '../../data/pricebook'
+import { getSizes } from '../../data/sizes'
+import MeasurementSvg from './MeasurementSvg'
 import logoAllWhite from '../../assets/logo-fase-allwhite.svg'
 
-declare global {
+declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
-      'image-slot': any
+      'image-slot': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        id?: string
+        shape?: string
+        radius?: string
+        placeholder?: string
+      }
     }
   }
 }
@@ -137,11 +145,91 @@ export function A4Body() {
   )
 }
 
+export function A4SizesPage() {
+  const { selectedSizeChartId } = useBudget()
+  const sizesData = getSizes()
+  const chart = sizesData[selectedSizeChartId]
+  if (!chart) return null
+
+  return (
+    <div className="a4 a4-page-break" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
+      <div className="a4__hero">
+        <img className="a4__hero-logo" src={logoAllWhite.src || logoAllWhite} alt="Fase Esporte" />
+        <div className="a4__hero-right">
+          <div className="a4__hero-title" style={{ fontSize: '1.4rem' }}>TABELA DE MEDIDAS</div>
+          <div className="a4__hero-meta" style={{ fontSize: '11px' }}>FASE ESPORTE UNIFORMES</div>
+        </div>
+      </div>
+      <div className="a4__company-bar">
+        <span>
+          <b>{chart.label.toUpperCase()}</b>
+        </span>
+        <span>Teixeira de Freitas — BA · contato@faseesporte.com.br</span>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px', marginTop: '40px', marginBottom: '24px', alignItems: 'center' }}>
+        {/* Table of sizes */}
+        <div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #111' }}>
+            <thead>
+              <tr style={{ background: '#111111', color: '#ffffff' }}>
+                {chart.cols.map((col) => (
+                  <th key={col} style={{ padding: '10px 12px', border: '1px solid #333', textAlign: col === 'Tamanho' ? 'left' : 'center', fontSize: '11px', textTransform: 'uppercase', color: '#ffffff', fontWeight: 'bold' }}>
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(chart.rows).map(([sizeKey, cellValues]) => (
+                <tr key={sizeKey} style={{ borderBottom: '1px solid #dddddd' }}>
+                  <td style={{ padding: '10px 12px', border: '1px solid #dddddd', fontWeight: 'bold', fontSize: '13px', color: '#B31217', background: '#fcfcfc' }}>
+                    {sizeKey}
+                  </td>
+                  {cellValues.map((cell, idx) => (
+                    <td key={idx} style={{ padding: '10px 12px', border: '1px solid #dddddd', textAlign: 'center', fontSize: '13px', color: '#000000', fontWeight: '500' }}>
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Drawing SVG */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff', padding: '20px', borderRadius: '6px', border: '1px solid #dddddd' }}>
+          <div style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '15px', color: '#111111', letterSpacing: '0.5px' }}>Onde Medir a Peça</div>
+          <div style={{ width: '100%', maxWidth: '210px' }}>
+            <MeasurementSvg type={chart.svgType} />
+          </div>
+        </div>
+      </div>
+
+      {/* Observation Box at bottom */}
+      <div className="a4__foot" style={{ marginTop: 'auto', display: 'block', padding: '15px', border: '2px dashed #B31217', background: '#fdfbfa', borderRadius: '4px' }}>
+        <b style={{ color: '#B31217', textTransform: 'uppercase', fontSize: '11px', display: 'block', marginBottom: '6px', letterSpacing: '0.5px' }}>Observação importante</b>
+        <p style={{ fontSize: '11.5px', margin: 0, lineHeight: '1.5', color: '#111111', fontWeight: '500' }}>
+          {chart.obs}
+        </p>
+      </div>
+
+      {/* Footer bar */}
+      <div className="a4__company-bar" style={{ marginTop: '40px' }}>
+        <span>www.fasesport.com.br · 73.3263.9900</span>
+        <span>Siga nossas redes sociais: @fase.sport</span>
+      </div>
+    </div>
+  )
+}
+
 /* Cópia oculta usada na impressão (visível apenas em @media print). */
 export default function PrintSheet() {
+  const { attachSizes } = useBudget()
   return (
     <div className="print-sheet">
       <A4Body />
+      {attachSizes && <A4SizesPage />}
     </div>
   )
 }

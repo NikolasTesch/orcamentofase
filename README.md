@@ -19,7 +19,14 @@ Este projeto é uma aplicação web interativa desenvolvida sob medida para a **
 ```text
 orcamentofase/
 ├── public/                 # Arquivos públicos estáticos
-│   └── favicon.ico         # Favicon da aplicação
+│   ├── favicon.svg         # Favicon da aplicação
+│   ├── icons.svg           # Ícones SVG reutilizáveis
+│   └── referencias/        # Arquivos externos e modelos enviados para referência
+│       ├── Fase sport orçamento-handoff.zip
+│       ├── ORÇAMENTO.xltx
+│       ├── Sem título branco.svg
+│       ├── Sem título-1.svg
+│       └── TABELA DE PREÇOS 2024.xlsx
 ├── src/
 │   ├── app/                # Rotas e Layouts nativos do Next.js App Router
 │   │   ├── layout.tsx      # Layout raiz (Fontes, Estilos globais e Providers)
@@ -36,8 +43,6 @@ orcamentofase/
 │   ├── data/               # Tabela de preços e matrizes financeiras (prices, pricebook)
 │   ├── lib/                # Bibliotecas de terceiros e Custom Elements (image-slot.js)
 │   └── styles/             # Design System & Estilos globais (.css)
-├── TABELA DE PREÇOS 2024.xlsx # Planilha original para referência
-├── ORÇAMENTO.xltx          # Modelo original em Excel para referência
 ├── next.config.ts          # Configuração do Next.js
 ├── tsconfig.json           # Configuração do TypeScript e Path Alias (@/*)
 ├── package.json            # Dependências e scripts npm

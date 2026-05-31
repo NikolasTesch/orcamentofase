@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, MouseEvent } from 'react'
+import { useEffect, useState, MouseEvent, ReactNode } from 'react'
 import { useTheme } from '../../theme-context'
 import logoBranco from '../../assets/logo-fase-branco.svg'
 import logoPreto from '../../assets/logo-fase-preto.svg'
@@ -8,7 +8,7 @@ import logoPreto from '../../assets/logo-fase-preto.svg'
 interface NavItem {
   id: string
   label: string
-  icon: JSX.Element
+  icon: ReactNode
 }
 
 const NAV_ITEMS: NavItem[] = [

@@ -71,12 +71,29 @@ export default function PricesPage() {
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 1900)
   }
 
-  const onSave = () => {
+  const onSave = async () => {
     savePB()
-    setDirty(false)
-    detailRef.current?.querySelectorAll('.pe-input.changed').forEach((i) => i.classList.remove('changed'))
-    flashToast('Alterações salvas')
+    const currentPB = getPB()
+    try {
+      const response = await fetch('/api/pricebook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: currentPB }),
+      })
+      const res = await response.json()
+      if (res.success) {
+        setDirty(false)
+        detailRef.current?.querySelectorAll('.pe-input.changed').forEach((i) => i.classList.remove('changed'))
+        flashToast('Alterações salvas no banco')
+      } else {
+        flashToast('Erro ao salvar no banco: ' + (res.error || 'Erro desconhecido'))
+      }
+    } catch (err) {
+      console.error('Error saving pricebook to server:', err)
+      flashToast('Erro de conexão ao salvar no banco')
+    }
   }
+
 
   const onReset = () => {
     if (!window.confirm('Restaurar todos os preços para o padrão da fábrica? As alterações salvas serão perdidas.')) return

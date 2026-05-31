@@ -46,6 +46,8 @@ export interface BudgetContextValue {
   cond: ConditionsData
   totals: TotalsData
   partners: string[]
+  attachSizes: boolean
+  selectedSizeChartId: string
   setActiveCat: (id: string) => void
   selectRadio: (key: string, v: any) => void
   toggleCheck: (key: string, v: any) => void
@@ -59,7 +61,10 @@ export interface BudgetContextValue {
   setClient: (patch: Partial<ClientData>) => void
   setDisc: (patch: Partial<DiscountData>) => void
   setCond: (patch: Partial<ConditionsData>) => void
+  setAttachSizes: (attach: boolean) => void
+  setSelectedSizeChartId: (id: string) => void
   partnerInfo: (it: CartItem) => { kind: 'exempt' | 'discount' | 'none'; d: number; short?: string }
+  saveBudgetToServer: (status?: 'open' | 'won' | 'lost') => Promise<{ success: boolean; data?: any; error?: string }>
 }
 
 /* Contexto comercial isolado dos componentes. */

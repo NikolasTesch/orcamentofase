@@ -159,6 +159,13 @@ export function subscribe(fn: () => void) {
 
 export const getPB = () => PB
 
+export function updatePBFromServer(data: any) {
+  if (!data) return
+  PB = deepMerge(clone(DEFAULT_PB), data)
+  subs.forEach((f) => f())
+}
+
+
 /* ---- acessores usados pelas funções de preço ---- */
 const N = (cat: string, g: string, k: string): number => {
   const o = PB[cat]?.[g]

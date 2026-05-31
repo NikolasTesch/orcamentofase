@@ -1,6 +1,7 @@
 "use client"
 
-import { A4Body } from './PrintSheet'
+import { A4Body, A4SizesPage } from './PrintSheet'
+import { useBudget } from '../../context/budget-context'
 import { MouseEvent } from 'react'
 
 const PrintIcon = (
@@ -23,6 +24,7 @@ interface PreviewModalProps {
 
 /* Pré-visualização do A4 em modal (porta openModal/closeModal de app.js). */
 export default function PreviewModal({ open, onClose, onPrint }: PreviewModalProps) {
+  const { attachSizes } = useBudget()
   return (
     <div
       className={`modal no-print${open ? ' open' : ''}`}
@@ -43,7 +45,12 @@ export default function PreviewModal({ open, onClose, onPrint }: PreviewModalPro
           </div>
         </div>
         {/* só monta o A4 quando aberto, para não duplicar o id do image-slot à toa */}
-        {open && <A4Body />}
+        {open && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            <A4Body />
+            {attachSizes && <A4SizesPage />}
+          </div>
+        )}
       </div>
     </div>
   )

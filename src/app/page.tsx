@@ -41,6 +41,14 @@ const WaIcon = (
   </svg>
 )
 
+const SaveIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v13a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
+  </svg>
+)
+
 const CloseIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 6 6 18M6 6l12 12" />
@@ -87,6 +95,7 @@ function GeneratorBody() {
   const budget = useBudget()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const doPrint = () => {
     setPreviewOpen(false)
@@ -96,6 +105,20 @@ function GeneratorBody() {
     const text = encodeURIComponent(buildWhatsApp(budget))
     const phone = (budget.client.phone || '').replace(/\D/g, '')
     window.open(`https://wa.me/${phone ? '55' + phone : ''}?text=${text}`, '_blank', 'noopener')
+  }
+  const saveBudget = async (status: 'open' | 'won' | 'lost' = 'open') => {
+    if (!budget.cart.length) {
+      alert('Adicione itens ao orçamento antes de salvar!')
+      return
+    }
+    setSaving(true)
+    const res = await budget.saveBudgetToServer(status)
+    setSaving(false)
+    if (res.success) {
+      alert(`Orçamento salvo com sucesso no banco como "${status === 'won' ? 'Fechado' : 'Em aberto'}"!`)
+    } else {
+      alert('Erro ao salvar no banco: ' + res.error)
+    }
   }
 
   return (
@@ -143,6 +166,26 @@ function GeneratorBody() {
                 </button>
                 <button type="button" className="btn btn--ghost" style={{ flex: 1 }} onClick={sendWhatsApp}>
                   {WaIcon}WhatsApp
+                </button>
+              </div>
+              <div className="row" style={{ gap: 10, marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  style={{ flex: 1 }}
+                  disabled={saving || !budget.cart.length}
+                  onClick={() => saveBudget('open')}
+                >
+                  {SaveIcon} Salvar Aberto
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  style={{ flex: 1, backgroundColor: '#10b981', borderColor: '#10b981' }}
+                  disabled={saving || !budget.cart.length}
+                  onClick={() => saveBudget('won')}
+                >
+                  {SaveIcon} Salvar Fechado
                 </button>
               </div>
             </div>
