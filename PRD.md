@@ -77,7 +77,8 @@ Mapeamos as funcionalidades do sistema utilizando a metodologia MoSCoW (*Must Ha
 
 ### 4.4. Won't Have (Fora de Escopo do MVP)
 - **Autenticação de Usuários**: Sem login/senha de vendedores nesta etapa.
-- **Banco de Dados em Nuvem**: Sem persistência em servidor ou histórico de orçamentos salvos online (aplicação armazena em memória local e localStorage de forma segura).
+
+> **Nota:** O banco de dados em nuvem (Neon PostgreSQL) foi promovido para **Must Have** na versão 3.0 do Plano de Implementação. Consulte `planoimplementacao.md` para detalhes.
 
 ---
 
@@ -102,6 +103,39 @@ Itens promocionais (Malha, Estampa Total, Camisa PP, Abadás) devem seguir estri
 Toda proposta formalizada deve exibir obrigatoriamente a divisão financeira padrão da Fase Esporte:
 - **Sinal de Entrada**: 50% do valor líquido total exigido no ato de fechamento do pedido.
 - **Saldo Restante (50%)**: A ser quitado na entrega do material (à vista, pix ou cartão).
+
+### BR-05: Bandeiras Sublimadas — Modelo de Precificação
+
+A categoria Bandeiras possui **4 sub-modalidades** com lógicas de cálculo distintas:
+
+#### BR-05-A: Bandeira Standard (Precificação por m²)
+- **Simples** (estampa em 1 face): **R$ 50,00 / m²**
+- **Dupla Face** (estampa nos 2 lados, dois tecidos): **R$ 80,00 / m²**
+- `Preço Unitário = Área (m²) × Preço por m²`
+- Opcionais acrescidos por unidade: Haste (+R$ 70,00), Base (+R$ 90,00), Costura extra (+R$ 22,00)
+- Dimensões pré-configuradas: P (0,35 m²), M (1,50 m²), G (2,60 m²), GG (6,00 m²) + entrada personalizada
+
+#### BR-05-B: Bandeira de Política (Promocional — Campanha Eleitoral)
+- Preço fixo: **R$ 30,00 / unidade**
+- Quantidade mínima obrigatória: **20 unidades** (abaixo disso, usar preço padrão por m²)
+- Dimensões fixas: **0,90 × 0,70 m** (não editável pelo vendedor)
+- Sistema deve exibir aviso caso quantidade < 20 un.
+
+#### BR-05-C: Bandeira de Escanteio (Kit de Futebol)
+- Venda em **kit de 4 unidades por R$ 40,00** (R$ 10,00/un.)
+- Dimensões fixas: **0,25 × 0,30 m** (não editável)
+- Não permitir venda de unidades avulsas abaixo do kit de 4
+
+#### BR-05-D: Wind Banner (Sistema de Expositor)
+- **Não usa precificação por m²** — preços fixos por componente:
+  - Bandeira (lona): **R$ 160,00 / un.**
+  - Haste: **R$ 70,00 / un.**
+  - Base: **R$ 90,00 / un.**
+  - Kit completo (bandeira + haste + base): **R$ 320,00 / un.**
+- O configurador deve sugerir o **kit completo como opção padrão**
+- Cada peça pode ser vendida avulsa (reposição/upgrade)
+
+> **Documentação detalhada**: Ver `REGRAS_NEGOCIO.md` § CATEGORIA: Bandeiras Sublimadas
 
 ---
 
