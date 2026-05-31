@@ -3,7 +3,7 @@
 import { useBudget } from '../../context/budget-context'
 
 export default function Conditions() {
-  const { disc, cond, setDisc, setCond, attachSizes, selectedSizeChartId, setAttachSizes, setSelectedSizeChartId } = useBudget()
+  const { disc, cond, setDisc, setCond, attachSizes, selectedSizeChartId, setAttachSizes, setSelectedSizeChartId, notes, setNotes } = useBudget()
   return (
     <div className="panel">
       <div className="panel__title">Condições &amp; desconto</div>
@@ -59,6 +59,19 @@ export default function Conditions() {
             />
             <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>dias</span>
           </div>
+        </div>
+
+        {/* Observações */}
+        <div className="cond-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 6, borderTop: '1px solid var(--border-color)', paddingTop: 14, marginTop: 4 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Observações</label>
+          <textarea
+            className="input"
+            placeholder="Informações adicionais para o cliente, condições especiais, prazos..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            style={{ width: '100%', resize: 'vertical', fontSize: 13, lineHeight: '1.5', padding: '10px 12px', borderRadius: 'var(--radius)' }}
+          />
         </div>
 
         {/* Size Chart Attachment Selection */}

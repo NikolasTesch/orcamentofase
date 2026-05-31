@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import PageLayout from '../../components/app/PageLayout'
 import PageHeader from '../../components/app/PageHeader'
-import { editSchema, getPB, setPrice, savePB, resetPB, EditSection } from '../../data/pricebook'
+import { editSchema, getPB, updatePBFromServer, EditSection } from '../../data/pricebook'
 
 const KIND_LABEL: Record<string, string> = {
   kit: 'Kit',
@@ -39,13 +39,42 @@ function NumCell({ group, defaultValue, onChange }: NumCellProps) {
   )
 }
 
+// Mapa de patches pendentes: catId.group.keyPath -> { groupId, subKey, bracketId, value }
+type PricePatch = { groupId: string; subKey: string | null; bracketId: string | null; value: number }
+
 export default function PricesPage() {
-  const [rev, setRev] = useState(0) // re-monta inputs após restaurar padrão
+  const [loading, setLoading] = useState(true)
+  const [groupMap, setGroupMap] = useState<Record<string, any>>({}) // catKey.groupKey -> group with id
+  const [rev, setRev] = useState(0)
   const schema = useMemo(() => editSchema(), [rev])
-  const [active, setActive] = useState(schema[0].catId)
+  const [active, setActive] = useState(schema[0]?.catId || '')
   const [dirty, setDirty] = useState(false)
+  const [pendingPatches, setPendingPatches] = useState<PricePatch[]>([])
   const [toast, setToast] = useState({ show: false, text: 'Alterações salvas' })
   const detailRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    loadPricebook()
+  }, [])
+
+  async function loadPricebook() {
+    setLoading(true)
+    try {
+      const [pbRes, groupRes] = await Promise.all([
+        fetch('/api/pricebook').then((r) => r.json()),
+        fetch('/api/pricebook/groups').then((r) => r.json()).catch(() => ({ success: false })),
+      ])
+      if (pbRes.success && pbRes.data) {
+        updatePBFromServer(pbRes.data)
+        setRev((r) => r + 1)
+      }
+      if (groupRes.success && groupRes.data) {
+        setGroupMap(groupRes.data)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!dirty) return
@@ -58,13 +87,38 @@ export default function PricesPage() {
   }, [dirty])
 
   const cat = schema.find((c) => c.catId === active)
-  if (!cat) return null
-
-  const pb = getPB()[cat.catId]
+  const pb = cat ? getPB()[cat.catId] : null
 
   const touch = (catId: string, group: string, path: any, value: string) => {
-    setPrice(catId, group, path, value)
+    const v = parseFloat(value)
+    if (isNaN(v)) return
+    // Atualiza memória local via pricebook in-memory (para exibição imediata)
+    const node = getPB()[catId]?.[group]
+    if (node) {
+      if (Array.isArray(node)) node[path] = v
+      else if (Array.isArray(path) && Array.isArray(node[path[0]])) node[path[0]][path[1]] = v
+      else node[path] = v
+    }
     setDirty(true)
+
+    // Acumula patch para envio ao banco
+    const gData = groupMap[`${catId}.${group}`]
+    if (gData) {
+      const patch: PricePatch = { groupId: gData.id, subKey: null, bracketId: null, value: v }
+      if (Array.isArray(path)) {
+        patch.subKey = path[0]
+        patch.bracketId = gData.bracketIds?.[path[1]] || null
+      } else if (typeof path === 'number') {
+        patch.bracketId = gData.bracketIds?.[path] || null
+      } else {
+        patch.subKey = path
+      }
+      setPendingPatches((prev) => {
+        const idx = prev.findIndex((p) => p.groupId === patch.groupId && p.subKey === patch.subKey && p.bracketId === patch.bracketId)
+        if (idx >= 0) return prev.map((p, i) => (i === idx ? patch : p))
+        return [...prev, patch]
+      })
+    }
   }
 
   const flashToast = (text: string) => {
@@ -73,35 +127,45 @@ export default function PricesPage() {
   }
 
   const onSave = async () => {
-    savePB()
-    const currentPB = getPB()
     try {
-      const response = await fetch('/api/pricebook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: currentPB }),
-      })
-      const res = await response.json()
-      if (res.success) {
-        setDirty(false)
-        detailRef.current?.querySelectorAll('.pe-input.changed').forEach((i) => i.classList.remove('changed'))
-        flashToast('Alterações salvas no banco')
-      } else {
-        flashToast('Erro ao salvar no banco: ' + (res.error || 'Erro desconhecido'))
+      for (const patch of pendingPatches) {
+        await fetch('/api/pricebook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        })
       }
-    } catch (err) {
-      console.error('Error saving pricebook to server:', err)
+      setPendingPatches([])
+      setDirty(false)
+      detailRef.current?.querySelectorAll('.pe-input.changed').forEach((i) => i.classList.remove('changed'))
+      flashToast('Alterações salvas no banco')
+    } catch {
       flashToast('Erro de conexão ao salvar no banco')
     }
   }
 
+  const onReset = async () => {
+    if (!window.confirm('Restaurar todos os preços para o padrão? As alterações salvas serão perdidas.')) return
+    try {
+      await fetch('/api/pricebook', { method: 'DELETE' })
+      await loadPricebook()
+      setPendingPatches([])
+      setDirty(false)
+      setRev((r) => r + 1)
+      flashToast('Preços restaurados ao padrão')
+    } catch {
+      flashToast('Erro ao restaurar preços')
+    }
+  }
 
-  const onReset = () => {
-    if (!window.confirm('Restaurar todos os preços para o padrão da fábrica? As alterações salvas serão perdidas.')) return
-    resetPB()
-    setDirty(false)
-    setRev((r) => r + 1)
-    flashToast('Preços restaurados ao padrão')
+  if (loading) {
+    return (
+      <PageLayout maxWidth="standard">
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+          <span style={{ color: 'var(--text-muted)' }}>Carregando tabela de preços...</span>
+        </div>
+      </PageLayout>
+    )
   }
 
   const actions = (
@@ -113,22 +177,24 @@ export default function PricesPage() {
         </svg>
         Restaurar padrão
       </button>
-      <button type="button" className="btn btn--primary" onClick={onSave}>
+      <button type="button" className={`btn btn--primary${!dirty ? ' btn--disabled' : ''}`} onClick={onSave} disabled={!dirty}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M5 3h11l3 3v15H5V3Z" />
           <path d="M8 3v6h7M8 21v-7h8v7" />
         </svg>
-        Salvar alterações
+        {pendingPatches.length > 0 ? `Salvar (${pendingPatches.length})` : 'Salvar alterações'}
       </button>
     </>
   )
+
+  if (!cat || !pb) return null
 
   return (
     <PageLayout maxWidth="standard">
       <div className="admin-body">
         <PageHeader
           title="Tabela de preços"
-          subtitle="Ajuste valores base por faixa de volume, acréscimos de gola/tecido e opcionais. As alterações são salvas neste navegador e passam a valer no gerador."
+          subtitle="Ajuste valores base por faixa de volume, acréscimos de gola/tecido e opcionais. As alterações são salvas no banco de dados."
           eyebrow="Administração · preços 2024"
           actions={actions}
         />
@@ -177,9 +243,7 @@ export default function PricesPage() {
                       <thead>
                         <tr>
                           <th>Item</th>
-                          {sec.cols?.map((c2) => (
-                            <th key={c2}>{c2}</th>
-                          ))}
+                          {sec.cols?.map((c2) => <th key={c2}>{c2}</th>)}
                         </tr>
                       </thead>
                       <tbody>
@@ -190,7 +254,7 @@ export default function PricesPage() {
                               <td key={b}>
                                 <NumCell
                                   group={sec.group}
-                                  defaultValue={pb[sec.group][row.key][b]}
+                                  defaultValue={pb[sec.group]?.[row.key]?.[b]}
                                   onChange={(v) => touch(cat.catId, sec.group, [row.key, b], v)}
                                 />
                               </td>
@@ -209,9 +273,7 @@ export default function PricesPage() {
                       <thead>
                         <tr>
                           <th>Faixa</th>
-                          {sec.cols?.map((c2) => (
-                            <th key={c2}>{c2}</th>
-                          ))}
+                          {sec.cols?.map((c2) => <th key={c2}>{c2}</th>)}
                         </tr>
                       </thead>
                       <tbody>
@@ -221,7 +283,7 @@ export default function PricesPage() {
                             <td key={b}>
                               <NumCell
                                 group={sec.group}
-                                defaultValue={pb[sec.group][b]}
+                                defaultValue={pb[sec.group]?.[b]}
                                 onChange={(v) => touch(cat.catId, sec.group, b, v)}
                               />
                             </td>
@@ -239,7 +301,7 @@ export default function PricesPage() {
                         <label>{it.label}</label>
                         <NumCell
                           group={sec.group}
-                          defaultValue={pb[sec.group][it.key]}
+                          defaultValue={pb[sec.group]?.[it.key]}
                           onChange={(v) => touch(cat.catId, sec.group, it.key, v)}
                         />
                       </div>

@@ -1,0 +1,57 @@
+{
+  "kit_esportivo": {
+    "kit": { "prata": 0, "ouro": 0, "prof": 0, "premium": 0 },
+    "extras": { "nome": 0, "colete": 0, "goleiro": 0, "meiao": 0 }
+  },
+  "camisa_malha": {
+    "tecMatrix": {
+      "PP":    [0, 0, 0, 0, 0],
+      "PV":    [0, 0, 0, 0, 0],
+      "DRY":   [0, 0, 0, 0, 0],
+      "PIQUET":[0, 0, 0, 0, 0]
+    },
+    "gola": { "polo": 0, "redonda": 0, "v": 0 },
+    "extras": { "ml": 0, "bolso": 0, "reflex": 0, "nome": 0, "lapela": 0 }
+  },
+  "estampa_total": {
+    "areaMatrix": {
+      "fc_manga": [0, 0, 0, 0, 0],
+      "fc":       [0, 0, 0, 0, 0],
+      "frente":   [0, 0, 0, 0, 0]
+    },
+    "gola":   { "redonda": 0, "v": 0, "polo": 0 },
+    "tecido": { "PP": 0, "DRY": 0, "CAMB": 0 },
+    "extras": { "nome": 0, "sm": 0, "mll": 0, "mle": 0 }
+  },
+  "camisa_pp": {
+    "baseRow": [0, 0, 0, 0, 0],
+    "cor":     { "branca": 0, "cores": 0 },
+    "config":  { "fc": 0, "pc": 0 },
+    "area":    { "lisa": 0, "frente": 0, "costas": 0, "peito": 0 },
+    "fotos":   { "ff": 0, "ffc": 0 }
+  },
+  "social": {
+    "peca":   { "jaleco": 0, "calca": 0, "mc": 0, "ml": 0, "blazer": 0 },
+    "tecido": { "Unioffice": 0, "Ibiza": 0 },
+    "extras": { "frisos": 0, "revel": 0, "bordado": 0 }
+  },
+  "tactel_helanca": {
+    "linha": { "Tactel": 0, "Helanca": 0 },
+    "peca":  { "short": 0, "bermuda": 0, "calca": 0, "jaqueta": 0, "agasalho": 0 },
+    "faixa": { "Adulto": 0, "Infantil": 0 },
+    "extras":{ "stamp": 0, "bolso": 0 }
+  },
+  "bandeira": {
+    "acab":  { "simples": 0, "dupla": 0 },
+    "tamM2": { "p": 0, "m": 0, "g": 0, "gg": 0 },
+    "extras":{ "haste": 0, "base": 0, "costura": 0 },
+    "wind_banner": { "bandeira": 0, "haste": 0, "base": 0 },
+    "politica":    { "unitario": 0, "minQty": 0, "largura": 0, "altura": 0 },
+    "escanteio":   { "kitTotal": 0, "qtdKit": 0, "largura": 0, "altura": 0 }
+  },
+  "abada": {
+    "baseRow": [0, 0, 0, 0, 0],
+    "tecido":  { "cacharel": 0, "dry": 0 },
+    "extras":  { "bandana": 0 }
+  }
+}

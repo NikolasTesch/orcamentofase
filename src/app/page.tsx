@@ -67,18 +67,26 @@ const FabIcon = (
 )
 
 function ClearAction() {
-  const { cart, clearCart } = useBudget()
+  const { cart, clearBudget, budgetSaved, currentBudgetId, savedBudgetNumber } = useBudget()
   return (
-    <button
-      type="button"
-      className="btn btn--ghost"
-      title="Limpar orçamento"
-      onClick={() => {
-        if (!cart.length || window.confirm('Limpar todos os itens do orçamento?')) clearCart()
-      }}
-    >
-      {TrashIcon}Limpar
-    </button>
+    <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+      {budgetSaved && savedBudgetNumber && (
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+          Orçamento #{savedBudgetNumber}
+        </span>
+      )}
+      <button
+        type="button"
+        className="btn btn--ghost"
+        title="Limpar orçamento"
+        onClick={() => {
+          if (!cart.length || window.confirm('Limpar orçamento atual e começar um novo?')) clearBudget()
+        }}
+      >
+        {TrashIcon}Limpar
+      </button>
+    </div>
   )
 }
 

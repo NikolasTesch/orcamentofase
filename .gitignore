@@ -41,3 +41,11 @@ tsconfig.tsbuildinfo
 .claude/
 .gemini/
 .antigravity-ide/
+
+# Design reference files (não são assets servidos)
+.references/
+
+# Dados privados — valores reais de preço e medidas (NUNCA commitar)
+src/data/defaults/pricebook.json
+src/data/defaults/sizes.json
+src/data/defaults/partners.json

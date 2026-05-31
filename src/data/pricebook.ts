@@ -5,7 +5,7 @@
    localStorage. Sem dependência de `window`.
    ============================================================ */
 
-const STORE_KEY = 'fase_pricebook_v2'
+// localStorage removido — fonte única: banco relacional via /api/pricebook e /api/partners
 
 export interface Bracket {
   label: string
@@ -29,20 +29,29 @@ export interface PartnerRate {
   promocional: number
 }
 
-export const PARTNERS: Record<string, PartnerRate | null> = {
-  Nenhuma: null,
-  'Escolinhas de Futebol': { kit: 25, esportivo: 15, promocional: 0 },
-  Academias: { kit: 50, esportivo: 30, promocional: 0 },
-  'Escolas Rede Privada': { kit: 15, esportivo: 15, promocional: 0 },
-  'Revendedores MG': { kit: 30, esportivo: 30, promocional: 0 },
-  'Revendedores BA': { kit: 15, esportivo: 15, promocional: 15 },
-  'Bola na Rede Medeiros Neto': { kit: 20, esportivo: 20, promocional: 10 },
+// Parcerias carregadas do banco via /api/partners — não hardcoded
+let PARTNERS_DB: Record<string, PartnerRate | null> = { Nenhuma: null }
+
+export function updatePartnersFromServer(partners: Array<{
+  name: string; kitDiscount: number; sportDiscount: number; promoDiscount: number
+}>) {
+  PARTNERS_DB = { Nenhuma: null }
+  for (const p of partners) {
+    PARTNERS_DB[p.name] = { kit: p.kitDiscount, esportivo: p.sportDiscount, promocional: p.promoDiscount }
+  }
+  subs.forEach((f) => f())
 }
+
+export const getPartners = () => PARTNERS_DB
+export const getPartnerNames = () => Object.keys(PARTNERS_DB)
+
+// Mantido para compatibilidade retroativa durante migração
+export const PARTNERS = PARTNERS_DB
 
 // Abadá é sempre isento de desconto de parceria (regra de evento).
 export const partnerDiscount = (partner: string, kind: string): number => {
   if (kind === 'abada') return 0
-  const rate = PARTNERS[partner]
+  const rate = PARTNERS_DB[partner]
   if (!rate) return 0
   return (rate as any)[kind] || 0
 }
@@ -103,19 +112,8 @@ export const DEFAULT_PB: Record<string, any> = {
   abada: { baseRow: [28, 26, 24, 22, 20], tecido: { cacharel: 0, dry: 6 }, extras: { bandana: 5 } },
 }
 
-/* ---- estado mutável + persistência ---- */
-let PB = loadPB()
-function loadPB(): Record<string, any> {
-  try {
-    if (typeof window !== 'undefined') {
-      const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null')
-      if (s) return deepMerge(clone(DEFAULT_PB), s)
-    }
-  } catch {
-    /* localStorage indisponível / JSON inválido */
-  }
-  return clone(DEFAULT_PB)
-}
+/* ---- estado mutável — fonte única: banco via /api/pricebook ---- */
+let PB = clone(DEFAULT_PB)
 
 function deepMerge(base: any, over: any): any {
   for (const k in over) {
@@ -128,29 +126,6 @@ function deepMerge(base: any, over: any): any {
 }
 
 const subs = new Set<() => void>()
-
-export function savePB() {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORE_KEY, JSON.stringify(PB))
-    }
-  } catch {
-    /* ignore */
-  }
-  subs.forEach((f) => f())
-}
-
-export function resetPB() {
-  PB = clone(DEFAULT_PB)
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORE_KEY)
-    }
-  } catch {
-    /* ignore */
-  }
-  subs.forEach((f) => f())
-}
 
 export function subscribe(fn: () => void) {
   subs.add(fn)

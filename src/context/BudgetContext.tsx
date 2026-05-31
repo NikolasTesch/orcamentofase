@@ -14,8 +14,9 @@ import {
   getCat,
   computeUnit,
   partnerDiscount,
-  PARTNERS,
   updatePBFromServer,
+  updatePartnersFromServer,
+  getPartnerNames,
 } from '../data/pricebook'
 import { updateSizesFromServer } from '../data/sizes'
 import { DEFAULT_SETTINGS } from '../lib/settings'
@@ -53,36 +54,30 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   const [selectedSizeChartId, setSelectedSizeChartId] = useState<string>('camisa_normal')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [savedBudgetNumber, setSavedBudgetNumber] = useState<number | null>(null)
+  const [currentBudgetId, setCurrentBudgetId] = useState<string | null>(null)
+  const [budgetSaved, setBudgetSaved] = useState(false)
+  const [budgetSaving, setBudgetSaving] = useState(false)
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
-    // Sincroniza pricebook
+    fetch('/api/partners')
+      .then((res) => res.json())
+      .then((res) => { if (res.success && res.data) updatePartnersFromServer(res.data) })
+      .catch((err) => console.error('Error fetching partners:', err))
+
     fetch('/api/pricebook')
       .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data) {
-          updatePBFromServer(res.data)
-        }
-      })
+      .then((res) => { if (res.success && res.data) updatePBFromServer(res.data) })
       .catch((err) => console.error('Error fetching pricebook:', err))
 
-    // Sincroniza tamanhos (sizes)
     fetch('/api/sizes')
       .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data) {
-          updateSizesFromServer(res.data)
-        }
-      })
+      .then((res) => { if (res.success && res.data) updateSizesFromServer(res.data) })
       .catch((err) => console.error('Error fetching sizes:', err))
 
-    // Sincroniza configurações da empresa
     fetch('/api/settings')
       .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data) {
-          setSettings({ ...DEFAULT_SETTINGS, ...res.data })
-        }
-      })
+      .then((res) => { if (res.success && res.data) setSettings({ ...DEFAULT_SETTINGS, ...res.data }) })
       .catch((err) => console.error('Error fetching settings:', err))
   }, [])
 
@@ -123,6 +118,9 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     if (!cat) return
     const st = config[activeCat]
     if (!st.qty) return
+    const unitPrice = computeUnit(cat, st)
+    const discPct = partnerDiscount(client.partnership, cat.kind)
+    const netUnitPrice = unitPrice * (1 - discPct / 100)
     setCart((list) => [
       ...list,
       {
@@ -131,16 +129,17 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         kind: cat.kind,
         desc: cat.describe(st),
         qty: st.qty,
-        unit: computeUnit(cat, st),
+        unit: unitPrice,
         snap: clone(st),
+        partnerDiscountPct: discPct,
+        netUnit: netUnitPrice,
       },
     ])
-  }, [activeCat, config])
+  }, [activeCat, config, client.partnership])
 
   const removeFromCart = useCallback((id: string) => setCart((l) => l.filter((it) => it.uid !== id)), [])
   const clearCart = useCallback(() => setCart([]), [])
 
-  // Re-precifica itens com faixa de volume ao mudar a quantidade.
   const setCartQty = useCallback((id: string, qty: number) => {
     setCart((l) =>
       l.map((it) => {
@@ -150,7 +149,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         if (!cat) return it
         const snap = { ...it.snap, qty: q }
         const unit = cat.brackets ? computeUnit(cat, snap) : it.unit
-        return { ...it, qty: q, snap, unit }
+        const netUnit = unit * (1 - it.partnerDiscountPct / 100)
+        return { ...it, qty: q, snap, unit, netUnit }
       }),
     )
   }, [])
@@ -165,7 +165,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         if (!cat) return l
         const snap = { ...it.snap, qty: q }
         const unit = cat.brackets ? computeUnit(cat, snap) : it.unit
-        return l.map((x) => (x.uid === id ? { ...x, qty: q, snap, unit } : x))
+        const netUnit = unit * (1 - it.partnerDiscountPct / 100)
+        return l.map((x) => (x.uid === id ? { ...x, qty: q, snap, unit, netUnit } : x))
       }),
     [],
   )
@@ -204,9 +205,12 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
 
   const saveBudgetToServer = useCallback(
     async (status: 'open' | 'won' | 'lost' = 'open') => {
+      setBudgetSaving(true)
       try {
-        const response = await fetch('/api/budgets', {
-          method: 'POST',
+        const url = currentBudgetId ? `/api/budgets/${currentBudgetId}` : '/api/budgets'
+        const method = currentBudgetId ? 'PATCH' : 'POST'
+        const response = await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             clientName: client.name || 'Cliente sem nome',
@@ -214,11 +218,16 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
             clientPartnership: client.partnership,
             delivery: cond.delivery,
             validity: cond.validity,
+            notes: notes || null,
             subtotal: totals.sub,
             partnerDiscount: totals.partnerDisc,
+            discountType: disc.type,
+            discountValue: disc.value,
             additionalDiscount: totals.add,
             netTotal: totals.net,
             entryValue: totals.entry,
+            attachSizes,
+            selectedSizeChartId,
             status,
             items: cart.map((it) => ({
               catId: it.catId,
@@ -226,25 +235,51 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
               desc: it.desc,
               qty: it.qty,
               unit: it.unit,
+              total: it.unit * it.qty,
+              partnerDiscount: it.partnerDiscountPct,
+              netUnit: it.netUnit,
+              netTotal: it.netUnit * it.qty,
               snap: it.snap,
             })),
           }),
         })
-
         const res = await response.json()
         if (res.success) {
+          if (res.data?.id) setCurrentBudgetId(res.data.id)
           if (res.data?.number) setSavedBudgetNumber(res.data.number)
+          setBudgetSaved(true)
           return { success: true, data: res.data }
-        } else {
-          return { success: false, error: res.error || 'Failed to save budget' }
         }
+        return { success: false, error: res.error || 'Falha ao salvar orçamento' }
       } catch (error: any) {
-        console.error('Error saving budget to server:', error)
-        return { success: false, error: error.message || 'Error connecting to server' }
+        return { success: false, error: error.message || 'Erro de conexão' }
+      } finally {
+        setBudgetSaving(false)
       }
     },
-    [client, cond, totals, cart],
+    [client, cond, totals, cart, disc, attachSizes, selectedSizeChartId, notes, currentBudgetId],
   )
+
+  const updateBudgetStatus = useCallback(async (id: string, status: 'open' | 'won' | 'lost', statusNotes?: string) => {
+    await fetch(`/api/budgets/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, statusNotes }),
+    })
+  }, [])
+
+  const clearBudget = useCallback(() => {
+    setCart([])
+    setClient({ name: '', phone: '', partnership: 'Nenhuma' })
+    setDisc({ type: 'percentage', value: 0 })
+    setCond({ delivery: 30, validity: 7 })
+    setAttachSizes(false)
+    setNotes('')
+    setCurrentBudgetId(null)
+    setBudgetSaved(false)
+    setSavedBudgetNumber(null)
+    setConfig(initialConfig())
+  }, [])
 
   // Auto-detect best match size chart when cart changes
   useEffect(() => {
@@ -290,7 +325,6 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   }, [cart])
 
   const value: BudgetContextValue = {
-    // estado
     activeCat,
     config,
     cur,
@@ -300,32 +334,35 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     disc,
     cond,
     totals,
-    partners: Object.keys(PARTNERS),
+    partners: getPartnerNames(),
     attachSizes,
     selectedSizeChartId,
     settings,
     savedBudgetNumber,
-    // ações de configuração
+    currentBudgetId,
+    budgetSaved,
+    budgetSaving,
+    notes,
     setActiveCat,
     selectRadio,
     toggleCheck,
     setQty,
     bumpQty,
-    // ações de carrinho
     addToCart,
     removeFromCart,
     setCartQty,
     bumpCartQty,
     clearCart,
-    // formulário
     setClient: (patch) => setClient((c) => ({ ...c, ...patch })),
     setDisc: (patch) => setDisc((d) => ({ ...d, ...patch })),
     setCond: (patch) => setCond((c) => ({ ...c, ...patch })),
     setAttachSizes,
     setSelectedSizeChartId,
-    // helpers
     partnerInfo,
     saveBudgetToServer,
+    updateBudgetStatus,
+    clearBudget,
+    setNotes,
   }
 
   return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>

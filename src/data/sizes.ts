@@ -4,7 +4,7 @@
    e customizadas, editáveis na interface administrativa.
    ============================================================ */
 
-const SIZES_STORE_KEY = 'fase_sizes_v2'
+// localStorage removido — fonte única: banco relacional via /api/sizes
 
 export interface SizeChart {
   id: string
@@ -96,59 +96,10 @@ export const DEFAULT_SIZES: Record<string, SizeChart> = {
   }
 }
 
-// Clone helpers
 const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o))
 
-// State variables
-let SIZES = loadSizes()
+let SIZES: Record<string, SizeChart> = clone(DEFAULT_SIZES)
 const sizeSubs = new Set<() => void>()
-
-function loadSizes(): Record<string, SizeChart> {
-  try {
-    if (typeof window !== 'undefined') {
-      const stored = JSON.parse(localStorage.getItem(SIZES_STORE_KEY) || 'null')
-      if (stored) return deepMerge(clone(DEFAULT_SIZES), stored)
-    }
-  } catch {
-    // Ignore localStorage unavailability
-  }
-  return clone(DEFAULT_SIZES)
-}
-
-function deepMerge(base: any, over: any): any {
-  for (const k in over) {
-    if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k])) {
-      base[k] = base[k] || {}
-      deepMerge(base[k], over[k])
-    } else {
-      base[k] = over[k]
-    }
-  }
-  return base
-}
-
-export function saveSizes() {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(SIZES_STORE_KEY, JSON.stringify(SIZES))
-    }
-  } catch {
-    // Ignore
-  }
-  sizeSubs.forEach((fn) => fn())
-}
-
-export function resetSizes() {
-  SIZES = clone(DEFAULT_SIZES)
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(SIZES_STORE_KEY)
-    }
-  } catch {
-    // Ignore
-  }
-  sizeSubs.forEach((fn) => fn())
-}
 
 export function getSizes(): Record<string, SizeChart> {
   return SIZES
@@ -168,7 +119,34 @@ export function setSizeObs(chartId: string, obs: string) {
 
 export function updateSizesFromServer(data: any) {
   if (!data) return
-  SIZES = deepMerge(clone(DEFAULT_SIZES), data)
+  // data do banco relacional: { camisa_normal: { chartId, label, obs, columns, rows } }
+  // Converte para o formato SizeChart esperado pelos componentes de UI legados
+  const converted: Record<string, SizeChart> = {}
+  for (const [key, val] of Object.entries(data as Record<string, any>)) {
+    if (val && typeof val === 'object' && val.columns && val.rows) {
+      // Formato relacional do banco
+      const cols = val.columns.map((c: any) => c.label)
+      const rows: Record<string, string[]> = {}
+      for (const row of val.rows) {
+        rows[row.sizeKey] = val.columns.map((col: any) => {
+          const cell = row.cells.find((c: any) => c.columnId === col.id)
+          return cell?.value || ''
+        })
+      }
+      converted[key] = {
+        id: key,
+        label: val.label || DEFAULT_SIZES[key]?.label || key,
+        svgType: (val.svgType as any) || DEFAULT_SIZES[key]?.svgType || 'tshirt',
+        cols: ['Tamanho', ...cols],
+        rows,
+        obs: val.obs || '',
+      }
+    } else {
+      // Formato legado
+      converted[key] = val as SizeChart
+    }
+  }
+  SIZES = { ...clone(DEFAULT_SIZES), ...converted }
   sizeSubs.forEach((fn) => fn())
 }
 

@@ -10,6 +10,8 @@ export interface CartItem {
   qty: number
   unit: number
   snap: any
+  partnerDiscountPct: number
+  netUnit: number
 }
 
 export interface ClientData {
@@ -52,6 +54,10 @@ export interface BudgetContextValue {
   selectedSizeChartId: string
   settings: AppSettings
   savedBudgetNumber: number | null
+  currentBudgetId: string | null
+  budgetSaved: boolean
+  budgetSaving: boolean
+  notes: string
   setActiveCat: (id: string) => void
   selectRadio: (key: string, v: any) => void
   toggleCheck: (key: string, v: any) => void
@@ -69,6 +75,9 @@ export interface BudgetContextValue {
   setSelectedSizeChartId: (id: string) => void
   partnerInfo: (it: CartItem) => { kind: 'exempt' | 'discount' | 'none'; d: number; short?: string }
   saveBudgetToServer: (status?: 'open' | 'won' | 'lost') => Promise<{ success: boolean; data?: any; error?: string }>
+  updateBudgetStatus: (id: string, status: 'open' | 'won' | 'lost', notes?: string) => Promise<void>
+  clearBudget: () => void
+  setNotes: (notes: string) => void
 }
 
 /* Contexto comercial isolado dos componentes. */

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,45 +8,216 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Pricebook {
-  id        String   @id @default("default")
-  data      Json
-  updatedAt DateTime @updatedAt
+// ═══════════════════════════════════════════════════════
+// TABELA DE PREÇOS — Estrutura relacional por categoria
+// ═══════════════════════════════════════════════════════
+
+model PriceCategory {
+  id          String       @id @default(uuid())
+  catKey      String       @unique
+  label       String
+  icon        String
+  kind        String
+  hasBrackets Boolean      @default(false)
+  sortOrder   Int          @default(0)
+  groups      PriceGroup[]
+
+  @@map("price_categories")
+}
+
+model PriceBracket {
+  id        String       @id
+  label     String
+  minQty    Int
+  maxQty    Int
+  sortOrder Int          @default(0)
+  entries   PriceEntry[]
+
+  @@map("price_brackets")
+}
+
+model PriceGroup {
+  id         String         @id @default(uuid())
+  categoryId String
+  category   PriceCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  groupKey   String
+  title      String
+  groupType  PriceGroupType
+  sortOrder  Int            @default(0)
+  entries    PriceEntry[]
+
+  @@unique([categoryId, groupKey])
+  @@map("price_groups")
+}
+
+enum PriceGroupType {
+  SCALAR
+  BRACKET_ROW
+  BRACKET_MATRIX
+}
+
+model PriceEntry {
+  id        String        @id @default(uuid())
+  groupId   String
+  group     PriceGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  subKey    String?
+  bracketId String?
+  bracket   PriceBracket? @relation(fields: [bracketId], references: [id])
+  value     Float
+  updatedAt DateTime      @updatedAt
+
+  @@unique([groupId, subKey, bracketId])
+  @@map("price_entries")
+}
+
+// ═══════════════════════════════════════════════════════
+// TABELA DE MEDIDAS — Estrutura relacional por grade
+// ═══════════════════════════════════════════════════════
+
+model SizeChart {
+  id        String       @id @default(uuid())
+  chartKey  String       @unique
+  label     String
+  svgType   String
+  obs       String       @default("")
+  sortOrder Int          @default(0)
+  columns   SizeColumn[]
+  rows      SizeRow[]
+
+  @@map("size_charts")
+}
+
+model SizeColumn {
+  id        String     @id
+  chartId   String
+  chart     SizeChart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  label     String
+  sortOrder Int        @default(0)
+  cells     SizeCell[]
+
+  @@map("size_columns")
+}
+
+model SizeRow {
+  id        String     @id
+  chartId   String
+  chart     SizeChart  @relation(fields: [chartId], references: [id], onDelete: Cascade)
+  sizeKey   String
+  sortOrder Int        @default(0)
+  cells     SizeCell[]
+
+  @@map("size_rows")
+}
+
+model SizeCell {
+  id        String     @id @default(uuid())
+  rowId     String
+  row       SizeRow    @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  columnId  String
+  column    SizeColumn @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  value     String
+  updatedAt DateTime   @updatedAt
+
+  @@unique([rowId, columnId])
+  @@map("size_cells")
+}
+
+// ═══════════════════════════════════════════════════════
+// PARCERIAS
+// ═══════════════════════════════════════════════════════
+
+model Partner {
+  id            String  @id @default(uuid())
+  name          String  @unique
+  kitDiscount   Int     @default(0)
+  sportDiscount Int     @default(0)
+  promoDiscount Int     @default(0)
+  isActive      Boolean @default(true)
+  logoNote      Boolean @default(true)
+  sortOrder     Int     @default(0)
+
+  @@map("partners")
+}
+
+// ═══════════════════════════════════════════════════════
+// ORÇAMENTOS
+// ═══════════════════════════════════════════════════════
+
+enum BudgetStatus {
+  open
+  won
+  lost
 }
 
 model Budget {
-  id                 String           @id @default(uuid())
-  number             Int              @default(autoincrement())
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  clientName         String
-  clientPhone        String
-  clientPartnership  String
-  delivery           Int
-  validity           Int
-  subtotal           Float
-  partnerDiscount    Float
-  additionalDiscount Float
-  netTotal           Float
-  entryValue         Float
-  status             String           @default("open") // "open", "won", "lost"
-  items              BudgetLineItem[]
+  id                  String              @id @default(uuid())
+  number              Int                 @default(autoincrement())
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  clientName          String
+  clientPhone         String              @default("")
+  clientPartnership   String              @default("Nenhuma")
+
+  delivery            Int                 @default(30)
+  validity            Int                 @default(7)
+  notes               String?
+
+  subtotal            Float               @default(0)
+  partnerDiscount     Float               @default(0)
+  discountType        String              @default("percentage")
+  discountValue       Float               @default(0)
+  additionalDiscount  Float               @default(0)
+  netTotal            Float               @default(0)
+  entryValue          Float               @default(0)
+
+  status              BudgetStatus        @default(open)
+
+  attachSizes         Boolean             @default(false)
+  selectedSizeChartId String?
+
+  items               BudgetLineItem[]
+  statusHistory       BudgetStatusEvent[]
+
+  @@map("budgets")
+}
+
+model BudgetLineItem {
+  id              String  @id @default(uuid())
+  budgetId        String
+  budget          Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  catId           String
+  kind            String
+  desc            String
+
+  qty             Int
+  unit            Float
+  total           Float   @default(0)
+
+  partnerDiscount Float   @default(0)
+  netUnit         Float   @default(0)
+  netTotal        Float   @default(0)
+
+  snap            Json
+
+  @@map("budget_line_items")
+}
+
+model BudgetStatusEvent {
+  id         String        @id @default(uuid())
+  budgetId   String
+  budget     Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  fromStatus BudgetStatus?
+  toStatus   BudgetStatus
+  changedAt  DateTime      @default(now())
+  notes      String?
+
+  @@map("budget_status_events")
 }
 
 model Settings {
   id        String   @id @default("default")
   data      Json
   updatedAt DateTime @updatedAt
-}
-
-model BudgetLineItem {
-  id       String @id @default(uuid())
-  budgetId String
-  budget   Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
-  catId    String
-  kind     String
-  desc     String
-  qty      Int
-  unit     Float
-  snap     Json   // Stores detailed item snapshot configuration
 }
