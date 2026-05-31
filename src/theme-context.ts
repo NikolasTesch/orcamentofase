@@ -1,12 +1,4 @@
-import { createContext, useContext } from 'react'
-
-export interface ThemeContextValue {
-  theme: string
-  toggle: () => void
-}
-
-export const ThemeContext = createContext<ThemeContextValue>({ theme: 'dark', toggle: () => {} })
-
-export function useTheme() {
-  return useContext(ThemeContext)
-}
+// Re-exporta de src/context/theme-context.ts — arquivo mantido para compatibilidade de imports legados.
+// Remover quando não houver mais referências diretas.
+export { ThemeContext, useTheme } from './context/theme-context'
+export type { ThemeContextValue } from './context/theme-context'

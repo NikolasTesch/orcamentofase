@@ -63,8 +63,8 @@ const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o))
 /* ---- valores padrão (ajustados) ---- */
 export const DEFAULT_PB: Record<string, any> = {
   kit_esportivo: {
-    kit: { prata: 72, ouro: 94, prof: 128, premium: 168 },
-    extras: { nome: 7, colete: 22, goleiro: 38, meiao: 12 },
+    kit: { prata: 128, ouro: 150, prof: 170, escolinha: 133 },
+    extras: { nome: 5, colete: 22, goleiro: 10, meiao: 20 },
   },
   camisa_malha: {
     tecMatrix: {
@@ -105,9 +105,12 @@ export const DEFAULT_PB: Record<string, any> = {
     extras: { stamp: 13, bolso: 6 },
   },
   bandeira: {
-    acab: { simples: 65, dupla: 99 },
-    tamM2: { p: 0.54, m: 1.5, g: 2.6, gg: 6.0 },
-    extras: { haste: 38, base: 48, costura: 22 },
+    acab: { simples: 50, dupla: 80 },
+    tamM2: { p: 0.35, m: 1.5, g: 2.6, gg: 6.0 },
+    extras: { haste: 70, base: 90, costura: 22 },
+    wind_banner: { bandeira: 160, haste: 70, base: 90 },
+    politica: { unitario: 30, minQty: 20, largura: 0.90, altura: 0.70 },
+    escanteio: { kitTotal: 40, qtdKit: 4, largura: 0.25, altura: 0.30 },
   },
   abada: { baseRow: [28, 26, 24, 22, 20], tecido: { cacharel: 0, dry: 6 }, extras: { bandana: 5 } },
 }
@@ -223,7 +226,7 @@ export const CATEGORIES: Category[] = [
           { v: 'prata', label: 'Prata' },
           { v: 'ouro', label: 'Ouro' },
           { v: 'prof', label: 'Profissional' },
-          { v: 'premium', label: 'Premium' },
+          { v: 'escolinha', label: 'Escolinha' },
         ],
       },
       {
@@ -231,10 +234,10 @@ export const CATEGORIES: Category[] = [
         label: 'Adicionais',
         type: 'check',
         options: [
-          { v: 'nome', label: 'Nome Individual' },
+          { v: 'nome', label: 'Nome Individual (+R$5)' },
           { v: 'colete', label: 'Colete' },
-          { v: 'goleiro', label: 'Calça Goleiro' },
-          { v: 'meiao', label: 'Meião extra' },
+          { v: 'goleiro', label: 'Goleiro Manga Longa (+R$10)' },
+          { v: 'meiao', label: 'Meia Cano Longo' },
         ],
       },
     ],
@@ -558,7 +561,7 @@ export const CATEGORIES: Category[] = [
         label: 'Medida',
         type: 'radio',
         options: [
-          { v: 'p', label: '0,90 × 0,60 m' },
+          { v: 'p', label: '0,70 × 0,50 m' },
           { v: 'm', label: '1,50 × 1,00 m' },
           { v: 'g', label: '2,00 × 1,30 m' },
           { v: 'gg', label: '3,00 × 2,00 m' },
