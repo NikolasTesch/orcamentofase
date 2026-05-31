@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '../../context/theme-context'
 import { ThemeToggle } from '../../context/theme'
 import logoBranco from '../../assets/logo-fase-branco.svg'
@@ -55,6 +55,12 @@ export default function AppHeader({ maxWidth = 'wide' }: AppHeaderProps) {
   const { theme } = useTheme()
   const logo = theme === 'light' ? logoPreto : logoBranco
   const pathname = usePathname() || '/'
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.replace('/login')
+  }
 
   return (
     <header className="app-header no-print">
@@ -82,6 +88,18 @@ export default function AppHeader({ maxWidth = 'wide' }: AppHeaderProps) {
         </nav>
         <div className="app-header__actions">
           <ThemeToggle />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={handleLogout}
+            title="Sair"
+            style={{ padding: '6px 10px', gap: 6 }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" style={{ width: 16, height: 16 }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+            <span style={{ fontSize: 13 }}>Sair</span>
+          </button>
         </div>
       </div>
     </header>
