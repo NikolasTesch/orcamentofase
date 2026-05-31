@@ -10,6 +10,6 @@ export async function POST(request: Request) {
   }
 
   const res = NextResponse.json({ success: true })
-  res.headers.set('Set-Cookie', cookieOptions())
+  res.headers.set('Set-Cookie', await cookieOptions())
   return res
 }

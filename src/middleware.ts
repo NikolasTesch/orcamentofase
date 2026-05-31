@@ -4,7 +4,7 @@ import { COOKIE_NAME, isValidToken } from './lib/auth'
 
 const PUBLIC = ['/login', '/api/auth/login']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Rotas públicas: página de login e a própria API de login
@@ -23,7 +23,7 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get(COOKIE_NAME)?.value
 
-  if (!isValidToken(token)) {
+  if (!await isValidToken(token)) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('from', pathname)
     return NextResponse.redirect(loginUrl)
