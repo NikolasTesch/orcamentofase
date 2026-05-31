@@ -105,7 +105,15 @@ export default function BudgetCart() {
                   <div>
                     <div className="cart-row__desc">{it.desc}</div>
                     <div className="cart-row__sub">
-                      {fmtBRL(it.unit)} un <DiscountTag info={info} />
+                      {info.kind === 'discount' ? (
+                        <>
+                          <del>{fmtBRL(it.unit)}</del>{' '}
+                          <span className="item-net-price">{fmtBRL(it.netUnit)} /un.</span>
+                          {' '}<DiscountTag info={info} />
+                        </>
+                      ) : (
+                        <>{fmtBRL(it.unit)} un <DiscountTag info={info} /></>
+                      )}
                     </div>
                   </div>
                   <div className="cart-row__total">
