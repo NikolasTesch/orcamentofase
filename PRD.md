@@ -27,7 +27,7 @@ Esse processo consome muito tempo e gera frequentes erros de cálculo de preços
 ### 2.2. Proposta de Valor
 Desenvolver uma aplicação web interativa e responsiva em **Next.js** e **TypeScript** estruturada em rotas nativas (App Router). O vendedor poderá configurar qualquer peça da Fase Esporte por meio de cliques rápidos em botões intuitivos. A aplicação calculará instantaneamente o preço unitário (usando a tabela de preços oficiais convertida para TS), gerará a descrição técnica formatada e criará uma visualização de orçamento limpa em formato A4, pronta para impressão ou exportação em PDF. 
 
-Além disso, disponibiliza painéis administrativos específicos para acompanhamento de **Métricas Comerciais** e **Edição Rápida da Tabela de Preços** diretamente pela interface do navegador.
+Além disso, disponibiliza painéis administrativos específicos para acompanhamento de **Métricas Comerciais**, **Edição Rápida da Tabela de Preços** diretamente pela interface do navegador, além de uma interface completa para gerenciamento e edição das **Grades de Medidas (Grades de Tamanho)** oficiais, que podem ser anexadas automaticamente ao PDF gerado.
 
 ### 2.3. Público-Alvo
 - Vendedores comerciais e representantes da Fase Esporte (utilizando tanto em desktops na loja física quanto em smartphones em atendimentos externos via WhatsApp).
@@ -52,12 +52,14 @@ Além disso, disponibiliza painéis administrativos específicos para acompanham
 Mapeamos as funcionalidades do sistema utilizando a metodologia MoSCoW (*Must Have*, *Should Have*, *Could Have*, *Won't Have*):
 
 ### 4.1. Must Have (Obrigatório)
+- **Navegação Superior Multi-Páginas (`AppHeader`)**: Uma barra de menu fixa e persistente no topo de todas as páginas da SPA para transições imediatas e amigáveis entre os módulos da plataforma (Gerador, Métricas, Tabela de Preços, Grade de Tamanhos, Design System).
 - **Seletor por Categorias**: Menu interativo para alternar entre as 8 categorias de produtos (Kit Esportivo, Camisa Malha, Estampa Total, Camisa PP, Social, Tactel/Helanca, Bandeira, Abadá).
 - **Configurador por Cliques**: Botões interativos em formato de opções ativas onde o vendedor seleciona tecidos, golas, mangas e opcionais sem precisar digitar.
 - **Cálculo Automático de Volume (Brackets)**: O sistema deve atualizar dinamicamente o valor base unitário assim que o campo de quantidade for alterado.
 - **Geração de Texto Técnico**: Um motor de templates que constrói a string técnica da peça de forma automática à medida que as opções são clicadas.
 - **Carrinho de Itens (BudgetCart)**: Lista onde o vendedor adiciona, edita a quantidade e remove itens configurados.
 - **Painel Financeiro & Totais**: Cálculo de Subtotal bruto, aplicação automática de desconto de parcerias, descontos manuais adicionais, valor líquido e divisão de 50% de entrada regulamentar.
+- **Anexo Dinâmico de Grade de Tamanhos**: Opção na área de condições comerciais que permite ao vendedor anexar a tabela oficial de medidas correspondente (Camisa Normal, Infantil, Social, Calça, Baby Look) como página adicional no PDF final do orçamento.
 - **Layout de Impressão A4 de Alta Fidelidade**: Otimização total para `window.print()` ocultando controles do site e gerando uma folha formal limpa com a logo e dados da Fase Esporte.
 
 ### 4.2. Should Have (Desejável)
@@ -66,6 +68,7 @@ Mapeamos as funcionalidades do sistema utilizando a metodologia MoSCoW (*Must Ha
 - **Avisos Visuais Dinâmicos**: Mensagens e alertas caso o usuário tente selecionar regras inválidas.
 - **Tabela de Preços Visual e Editável**: Área administrativa dedicada (`/tabela`) que permite a edição dos valores em tempo real e a persistência em memória local (`localStorage`).
 - **Dashboard de Métricas Comerciais**: Visualização em gráficos reativos e KPIs analíticos do faturamento estimado, tickets e taxas de fechamento sob `/metricas`.
+- **Painel Administrativo de Medidas (`/tamanhos`)**: Área dedicada para edição dinâmica de cada célula e da caixa de observações técnicas das tabelas de medidas, com persistência segura em `localStorage` e suporte a restauração padrão de fábrica.
 
 ### 4.3. Could Have (Poderia Ter)
 - **WhatsApp Direct**: Botão para abrir o WhatsApp Web diretamente com o texto resumido do orçamento formatado em markdown para envio rápido.
@@ -106,15 +109,16 @@ Toda proposta formalizada deve exibir obrigatoriamente a divisão financeira pad
 
 ### Fluxo 1: Elaboração de um Orçamento Comercial Rápido
 1. O vendedor abre a aplicação web e insere os dados do cliente (Nome: `Academia Fitness`, WhatsApp: `(73) 99999-9999`).
-2. Ele seleciona a aba **Camisa de Malha**.
+2. Ele seleciona a aba **Camisa de Malha** no painel configurador.
 3. Escolhe: **Gola Polo Simples**, Tecido: **PV**, Opcionais: **Manga Longa** e **Com Bolso**.
 4. Insere a quantidade: `120 peças`.
 5. O sistema atualiza dinamicamente o Preço Unitário (Base de bracket de 101 a 300 + adicionais) e monta a string: `CAMISA MALHA - Gola Polo Simples - Tecido PV - Manga Longa - Com Bolso`.
 6. O vendedor clica em **Adicionar ao Orçamento**. O item é listado no carrinho lateral.
 7. O vendedor seleciona no menu de Parcerias: `Academias`. O sistema identifica que o item é de revenda e aplica automaticamente **30% de desconto** sobre o subtotal daquele item.
-8. O valor total líquido atualiza, exibindo a entrada sugerida de 50%.
-9. O vendedor clica em **Imprimir/PDF**. O sistema renderiza o layout A4 e chama a tela de impressão nativa do browser em formato econômico (sem botões).
-10. O vendedor salva como PDF e envia para o cliente.
+8. Sob as condições comerciais, o vendedor marca o checkbox **"Anexar tabela de tamanhos"** e seleciona no menu dropdown a opção **"Camisa Normal - Unissex"**.
+9. O valor total líquido atualiza, exibindo a entrada sugerida de 50%.
+10. O vendedor clica em **Imprimir/PDF**. O sistema renderiza o layout A4 contendo a folha principal do orçamento e, na sequência, uma folha dedicada de grade de medidas com ilustrações SVG, e chama a tela de impressão nativa do browser em formato econômico (sem botões).
+11. O vendedor salva como PDF e envia para o cliente.
 
 ---
 

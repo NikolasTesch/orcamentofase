@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import AppHeader from '../../components/app/AppHeader'
+import PageLayout from '../../components/app/PageLayout'
+import PageHeader from '../../components/app/PageHeader'
 import MeasurementSvg from '../../components/gerador/MeasurementSvg'
 import { getSizes, saveSizes, resetSizes, setSizeValue, setSizeObs, subscribeSizes } from '../../data/sizes'
 
@@ -102,21 +103,14 @@ export default function SizesPage() {
   }
 
   return (
-    <div className="app">
-      <AppHeader title="Grade de Tamanhos" subtitle="Administração" actions={actions} />
-
+    <PageLayout maxWidth="standard">
       <div className="admin-body">
-        <div className="admin-head">
-          <div>
-            <p className="eyebrow">Administração · Tabelas de Medidas</p>
-            <h1>Grades de tamanhos</h1>
-            <p>
-              Consulte e configure as medidas de cada modelo de uniforme. Estas tabelas são anexadas 
-              automaticamente ao orçamento do cliente quando a opção de grade de tamanhos estiver ativa.
-            </p>
-          </div>
-          <div className="admin-actions">{actions}</div>
-        </div>
+        <PageHeader
+          title="Grades de tamanhos"
+          subtitle="Consulte e configure as medidas de cada modelo de uniforme. Estas tabelas são anexadas automaticamente ao orçamento do cliente quando a opção de grade de tamanhos estiver ativa."
+          eyebrow="Administração · Tabelas de Medidas"
+          actions={actions}
+        />
 
         <div className="pe-layout">
           {/* Sidebar selector */}
@@ -240,6 +234,6 @@ export default function SizesPage() {
       </div>
 
       <div className={`saved-toast${toast.show ? ' show' : ''}`}>{toast.text}</div>
-    </div>
+    </PageLayout>
   )
 }

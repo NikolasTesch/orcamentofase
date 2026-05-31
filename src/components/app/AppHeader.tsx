@@ -35,57 +35,44 @@ const NAV: NavItem[] = [
     label: 'Grade de tamanhos',
     icon: <path d="M2 9h20v6H2zm4 0v3m4-3v6m4-6v3m4-3v6" strokeWidth="2" strokeLinecap="round" />,
   },
-  {
-    to: '/design-system',
-    label: 'Design System',
-    icon: (
-      <>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-      </>
-    ),
-  },
 ]
 
 interface AppHeaderProps {
-  title: string
-  subtitle: string
-  actions?: ReactNode
+  maxWidth?: 'standard' | 'wide'
 }
 
-export default function AppHeader({ title, subtitle, actions }: AppHeaderProps) {
+export default function AppHeader({ maxWidth = 'wide' }: AppHeaderProps) {
   const { theme } = useTheme()
   const logo = theme === 'light' ? logoPreto : logoBranco
   const pathname = usePathname() || '/'
 
   return (
     <header className="app-header no-print">
-      <div className="app-header__brand">
-        <img src={logo.src || logo} alt="Fase Esporte" />
-        <div className="div" />
-        <div>
-          <div className="name">{title}</div>
-          <div className="sub">{subtitle}</div>
+      <div className={`app-header__container max-w-${maxWidth}`}>
+        <div className="app-header__brand">
+          <img src={logo.src || logo} alt="Fase Esporte" />
+          <div className="div" />
+          <div>
+            <div className="name">Fase Esporte</div>
+            <div className="sub">Teixeira de Freitas — BA</div>
+          </div>
         </div>
-      </div>
-      <nav className="app-nav">
-        {NAV.map((n) => {
-          const active = n.to === '/' ? pathname === '/' : pathname.startsWith(n.to)
-          return (
-            <Link key={n.to} href={n.to} className={active ? 'active' : undefined}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-                {n.icon}
-              </svg>
-              <span>{n.label}</span>
-            </Link>
-          )
-        })}
-      </nav>
-      <div className="app-header__actions">
-        {actions}
-        <ThemeToggle />
+        <nav className="app-nav">
+          {NAV.map((n) => {
+            const active = n.to === '/' ? pathname === '/' : pathname.startsWith(n.to)
+            return (
+              <Link key={n.to} href={n.to} className={active ? 'active' : undefined}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                  {n.icon}
+                </svg>
+                <span>{n.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
+        <div className="app-header__actions">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

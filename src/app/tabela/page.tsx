@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import AppHeader from '../../components/app/AppHeader'
+import PageLayout from '../../components/app/PageLayout'
+import PageHeader from '../../components/app/PageHeader'
 import { editSchema, getPB, setPrice, savePB, resetPB, EditSection } from '../../data/pricebook'
 
 const KIND_LABEL: Record<string, string> = {
@@ -123,21 +124,14 @@ export default function PricesPage() {
   )
 
   return (
-    <div className="app">
-      <AppHeader title="Tabela de Preços" subtitle="Administração" actions={actions} />
-
+    <PageLayout maxWidth="standard">
       <div className="admin-body">
-        <div className="admin-head">
-          <div>
-            <p className="eyebrow">Administração · preços 2024</p>
-            <h1>Tabela de preços</h1>
-            <p>
-              Ajuste valores base por faixa de volume, acréscimos de gola/tecido e opcionais. As
-              alterações são salvas neste navegador e passam a valer no gerador.
-            </p>
-          </div>
-          <div className="admin-actions">{actions}</div>
-        </div>
+        <PageHeader
+          title="Tabela de preços"
+          subtitle="Ajuste valores base por faixa de volume, acréscimos de gola/tecido e opcionais. As alterações são salvas neste navegador e passam a valer no gerador."
+          eyebrow="Administração · preços 2024"
+          actions={actions}
+        />
 
         <div className="pe-layout">
           <div className="pe-side">
@@ -259,6 +253,6 @@ export default function PricesPage() {
       </div>
 
       <div className={`saved-toast${toast.show ? ' show' : ''}`}>{toast.text}</div>
-    </div>
+    </PageLayout>
   )
 }

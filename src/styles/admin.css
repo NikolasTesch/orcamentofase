@@ -4,11 +4,7 @@
    ============================================================ */
 
 .admin-body { flex: 1; width: 100%; max-width: 1320px; margin: 0 auto; padding: var(--space-8) var(--space-8); }
-.admin-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-5); margin-bottom: var(--space-8); flex-wrap: wrap; }
-.admin-head h1 { font-family: var(--font-display); font-weight: 800; font-size: 2rem; letter-spacing: -0.02em; margin: 0; }
-.admin-head .eyebrow { color: var(--fase-red); margin-bottom: 8px; }
-.admin-head p { color: var(--text-secondary); font-size: var(--text-sm); margin: 6px 0 0; max-width: 64ch; }
-.admin-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
 
 /* ---------- Editor de preços ---------- */
 .pe-layout { display: grid; grid-template-columns: 256px 1fr; gap: var(--space-6); align-items: start; }

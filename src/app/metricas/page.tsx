@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState, useMemo, ReactNode } from 'react'
-import AppHeader from '../../components/app/AppHeader'
+import PageLayout from '../../components/app/PageLayout'
+import PageHeader from '../../components/app/PageHeader'
 
 /* Dados ilustrativos (porta de metrics.js). */
 interface MonthData {
@@ -162,20 +163,14 @@ export default function MetricsPage() {
   )
 
   return (
-    <div className="app">
-      <AppHeader title="Métricas" subtitle="Análise comercial" actions={periodSelect} />
-
+    <PageLayout maxWidth="standard">
       <div className="admin-body">
-        <div className="admin-head">
-          <div>
-            <p className="eyebrow">Visão geral · tempo real</p>
-            <h1>Desempenho comercial</h1>
-            <p>
-              Acompanhe orçamentos emitidos, ticket médio, taxa de fechamento e faturamento estimado
-              da equipe de vendas.
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Desempenho comercial"
+          subtitle="Acompanhe orçamentos emitidos, ticket médio, taxa de fechamento e faturamento estimado da equipe de vendas."
+          eyebrow="Visão geral · tempo real"
+          actions={periodSelect}
+        />
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
@@ -296,7 +291,7 @@ export default function MetricsPage() {
           </>
         )}
       </div>
-    </div>
+    </PageLayout>
   )
 }
 

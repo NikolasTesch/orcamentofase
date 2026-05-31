@@ -8,11 +8,22 @@
 /* ---------- Header ---------- */
 .app-header {
   position: sticky; top: 0; z-index: 40;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 32px; gap: 16px;
   background: color-mix(in srgb, var(--bg-app) 82%, transparent);
   backdrop-filter: blur(var(--glass-blur));
   border-bottom: 1px solid var(--border-color);
+  width: 100%;
+}
+.app-header__container {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px; gap: 16px;
+  width: 100%;
+  margin: 0 auto;
+}
+.app-header__container.max-w-standard {
+  max-width: 1320px;
+}
+.app-header__container.max-w-wide {
+  max-width: 1560px;
 }
 .app-header__brand { display: flex; align-items: center; gap: 14px; }
 .app-header__brand img { height: 26px; display: block; }
@@ -26,6 +37,51 @@
 .app-nav a.active { color: #fff; background: var(--fase-red); box-shadow: var(--shadow-glow-soft); }
 .app-header__actions { display: flex; align-items: center; gap: 10px; }
 @media (max-width: 720px) { .app-nav a span { display: none; } .app-header__brand .sub { display: none; } }
+
+/* ---------- Page Header ---------- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+  width: 100%;
+}
+.page-header__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.page-header__eyebrow {
+  color: var(--fase-red);
+  font-size: var(--text-cap);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.page-header__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.page-header__subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: 4px 0 0;
+  max-width: 64ch;
+}
+.page-header__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.col-span-full {
+  grid-column: 1 / -1;
+}
 
 /* ---------- Body grid ---------- */
 .app-body {

@@ -6,6 +6,8 @@ import { useBudget } from '../context/budget-context'
 import { fmtBRL } from '../data/pricebook'
 
 import AppHeader from '../components/app/AppHeader'
+import PageLayout from '../components/app/PageLayout'
+import PageHeader from '../components/app/PageHeader'
 import CategoryTabs from '../components/gerador/CategoryTabs'
 import Configurator from '../components/gerador/Configurator'
 import Simulator from '../components/gerador/Simulator'
@@ -122,14 +124,15 @@ function GeneratorBody() {
   }
 
   return (
-    <div className={`app${drawerOpen ? ' drawer-open' : ''}`}>
-      <AppHeader
-        title="Gerador de Orçamentos"
-        subtitle="Teixeira de Freitas — BA"
-        actions={<ClearAction />}
-      />
-
+    <PageLayout maxWidth="wide" className={drawerOpen ? 'drawer-open' : ''}>
       <div className="app-body no-print">
+        <PageHeader
+          title="Gerador de Orçamentos"
+          subtitle="Configure itens, tamanhos e quantidades para gerar orçamentos instantâneos."
+          eyebrow="Teixeira de Freitas — BA"
+          actions={<ClearAction />}
+          className="col-span-full"
+        />
         {/* configurador */}
         <div className="config-col">
           <div className="panel cat-tabs-wrap">
@@ -202,7 +205,7 @@ function GeneratorBody() {
       {/* impressão / preview */}
       <PrintSheet />
       <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} onPrint={doPrint} />
-    </div>
+    </PageLayout>
   )
 }
 
