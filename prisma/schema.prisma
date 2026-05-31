@@ -19,6 +19,7 @@ model Pricebook {
 
 model Budget {
   id                 String           @id @default(uuid())
+  number             Int              @default(autoincrement())
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   clientName         String
@@ -33,6 +34,12 @@ model Budget {
   entryValue         Float
   status             String           @default("open") // "open", "won", "lost"
   items              BudgetLineItem[]
+}
+
+model Settings {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
 }
 
 model BudgetLineItem {

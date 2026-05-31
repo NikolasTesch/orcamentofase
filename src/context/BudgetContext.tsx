@@ -18,6 +18,8 @@ import {
   updatePBFromServer,
 } from '../data/pricebook'
 import { updateSizesFromServer } from '../data/sizes'
+import { DEFAULT_SETTINGS } from '../lib/settings'
+import type { AppSettings } from '../lib/settings'
 
 const clone = <T,>(o: T): T => JSON.parse(JSON.stringify(o))
 const uid = () => Date.now() + '' + Math.random().toString(36).slice(2, 6)
@@ -49,6 +51,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   const [cond, setCond] = useState<ConditionsData>({ delivery: 30, validity: 7 })
   const [attachSizes, setAttachSizes] = useState<boolean>(false)
   const [selectedSizeChartId, setSelectedSizeChartId] = useState<string>('camisa_normal')
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
+  const [savedBudgetNumber, setSavedBudgetNumber] = useState<number | null>(null)
 
   useEffect(() => {
     // Sincroniza pricebook
@@ -70,6 +74,16 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         }
       })
       .catch((err) => console.error('Error fetching sizes:', err))
+
+    // Sincroniza configurações da empresa
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          setSettings({ ...DEFAULT_SETTINGS, ...res.data })
+        }
+      })
+      .catch((err) => console.error('Error fetching settings:', err))
   }, [])
 
   const cur = config[activeCat]
@@ -219,6 +233,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
 
         const res = await response.json()
         if (res.success) {
+          if (res.data?.number) setSavedBudgetNumber(res.data.number)
           return { success: true, data: res.data }
         } else {
           return { success: false, error: res.error || 'Failed to save budget' }
@@ -288,6 +303,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     partners: Object.keys(PARTNERS),
     attachSizes,
     selectedSizeChartId,
+    settings,
+    savedBudgetNumber,
     // ações de configuração
     setActiveCat,
     selectRadio,

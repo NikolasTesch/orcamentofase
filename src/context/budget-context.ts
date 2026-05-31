@@ -1,4 +1,6 @@
 import { createContext, useContext } from 'react'
+import type { AppSettings } from '../lib/settings'
+export type { AppSettings }
 
 export interface CartItem {
   uid: string
@@ -48,6 +50,8 @@ export interface BudgetContextValue {
   partners: string[]
   attachSizes: boolean
   selectedSizeChartId: string
+  settings: AppSettings
+  savedBudgetNumber: number | null
   setActiveCat: (id: string) => void
   selectRadio: (key: string, v: any) => void
   toggleCheck: (key: string, v: any) => void

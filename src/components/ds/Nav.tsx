@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, MouseEvent, ReactNode } from 'react'
-import { useTheme } from '../../theme-context'
+import { useTheme } from '../../context/theme-context'
 import logoBranco from '../../assets/logo-fase-branco.svg'
 import logoPreto from '../../assets/logo-fase-preto.svg'
 

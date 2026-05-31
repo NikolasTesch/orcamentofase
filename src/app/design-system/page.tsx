@@ -1,12 +1,12 @@
 "use client"
 
 import Nav from '../../components/ds/Nav'
-import { ThemeToggle } from '../../theme'
+import { ThemeToggle } from '../../context/theme'
 import logoBranco from '../../assets/logo-fase-branco.svg'
 import logoPreto from '../../assets/logo-fase-preto.svg'
 import logoMono from '../../assets/logo-fase-mono.svg'
 import logoAllWhite from '../../assets/logo-fase-allwhite.svg'
-import { useTheme } from '../../theme-context'
+import { useTheme } from '../../context/theme-context'
 import Link from 'next/link'
 
 export default function DesignSystemPage() {

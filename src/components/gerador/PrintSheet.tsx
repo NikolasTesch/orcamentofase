@@ -29,9 +29,12 @@ const dec = (n: number) => n.toFixed(2).replace('.', ',')
 
 /* Folha A4 do orçamento (porta updateSheet de app.js). Lê o estado comercial. */
 export function A4Body() {
-  const { cart, client, cond, totals } = useBudget()
+  const { cart, client, cond, totals, settings, savedBudgetNumber } = useBudget()
   const now = new Date()
   const partnerNote = client.partnership !== 'Nenhuma' && totals.partnerDisc > 0
+  const budgetNum = savedBudgetNumber
+    ? String(savedBudgetNumber).padStart(4, '0')
+    : 'RASCUNHO'
 
   return (
     <div className="a4">
@@ -40,15 +43,15 @@ export function A4Body() {
         <div className="a4__hero-right">
           <div className="a4__hero-title">ORÇAMENTO</div>
           <div className="a4__hero-meta">
-            Nº 0142 · {String(now.getDate()).padStart(2, '0')} {MON[now.getMonth()]} {now.getFullYear()}
+            Nº {budgetNum} · {String(now.getDate()).padStart(2, '0')} {MON[now.getMonth()]} {now.getFullYear()}
           </div>
         </div>
       </div>
       <div className="a4__company-bar">
         <span>
-          <b>FASE ESPORTE</b> · Uniformes e Equipamentos Esportivos
+          <b>{settings.companyName}</b> · {settings.tagline}
         </span>
-        <span>Teixeira de Freitas — BA · (73) 99999-9999 · contato@faseesporte.com.br</span>
+        <span>{settings.city} · {settings.phone} · {settings.email}</span>
       </div>
       <div className="a4__intro">
         <div className="a4__client">
@@ -146,7 +149,7 @@ export function A4Body() {
 }
 
 export function A4SizesPage() {
-  const { selectedSizeChartId } = useBudget()
+  const { selectedSizeChartId, settings } = useBudget()
   const sizesData = getSizes()
   const chart = sizesData[selectedSizeChartId]
   if (!chart) return null
@@ -164,7 +167,7 @@ export function A4SizesPage() {
         <span>
           <b>{chart.label.toUpperCase()}</b>
         </span>
-        <span>Teixeira de Freitas — BA · contato@faseesporte.com.br</span>
+        <span>{settings.city} · {settings.email}</span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px', marginTop: '40px', marginBottom: '24px', alignItems: 'center' }}>
@@ -216,8 +219,8 @@ export function A4SizesPage() {
 
       {/* Footer bar */}
       <div className="a4__company-bar" style={{ marginTop: '40px' }}>
-        <span>www.fasesport.com.br · 73.3263.9900</span>
-        <span>Siga nossas redes sociais: @fase.sport</span>
+        <span>{settings.website} · {settings.phone2}</span>
+        <span>Siga nossas redes sociais: {settings.social}</span>
       </div>
     </div>
   )

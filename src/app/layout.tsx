@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Outfit, Inter, JetBrains_Mono } from 'next/font/google'
 import ClientLoader from '../components/ClientLoader'
-import { ThemeProvider } from '../theme'
+import { ThemeProvider } from '../context/theme'
 
 import '../styles/fase-tokens.css'
 import '../styles/fase-guide.css'
