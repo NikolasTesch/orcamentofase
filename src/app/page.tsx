@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BudgetProvider } from '../context/BudgetContext'
 import { useBudget } from '../context/budget-context'
@@ -98,6 +98,15 @@ function GeneratorBody() {
   const budget = useBudget()
   const reduced = useReducedMotion()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1024px)')
+    setIsMobile(mq.matches)
+    const h = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
   const [previewOpen, setPreviewOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -125,8 +134,72 @@ function GeneratorBody() {
     }
   }
 
+  // Spring para o drawer bottom-sheet
+  const drawerSpring = { type: 'spring' as const, stiffness: 280, damping: 32, mass: 0.9 }
+  const drawerVariants = {
+    hidden: { y: '100%', opacity: reduced ? 0 : 1 },
+    visible: { y: 0, opacity: 1 },
+  }
+
+  const CheckoutContent = (
+    <>
+      {/* Handle de drag (visível só mobile) */}
+      <div className="drawer-handle no-print" />
+
+      <button
+        type="button"
+        className="btn btn--ghost drawer-close"
+        style={{ alignSelf: 'flex-end', marginBottom: 8 }}
+        onClick={() => setDrawerOpen(false)}
+      >
+        {CloseIcon}Fechar
+      </button>
+
+      <ClientForm />
+      <BudgetCart />
+      <Conditions />
+
+      <div className="panel glass-panel">
+        <Totals />
+        <div className="col" style={{ marginTop: 18 }}>
+          <button type="button" className="btn btn--primary btn--block btn--lg" onClick={doPrint}>
+            {PrintIcon}Gerar orçamento / Imprimir
+          </button>
+          <div className="row" style={{ gap: 10 }}>
+            <button type="button" className="btn btn--ghost" style={{ flex: 1 }} onClick={() => setPreviewOpen(true)}>
+              {EyeIcon}Visualizar A4
+            </button>
+            <button type="button" className="btn btn--ghost" style={{ flex: 1 }} onClick={sendWhatsApp}>
+              {WaIcon}WhatsApp
+            </button>
+          </div>
+          <div className="row" style={{ gap: 10, marginTop: 10 }}>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              style={{ flex: 1 }}
+              disabled={saving || !budget.cart.length}
+              onClick={() => saveBudget('open')}
+            >
+              {SaveIcon} Salvar Aberto
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary"
+              style={{ flex: 1, backgroundColor: '#10b981', borderColor: '#10b981' }}
+              disabled={saving || !budget.cart.length}
+              onClick={() => saveBudget('won')}
+            >
+              {SaveIcon} Salvar Fechado
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
   return (
-    <PageLayout maxWidth="wide" className={drawerOpen ? 'drawer-open' : ''}>
+    <PageLayout maxWidth="wide">
       <div className="app-body no-print">
         <PageHeader
           title="Gerador de Orçamentos"
@@ -135,6 +208,7 @@ function GeneratorBody() {
           actions={<ClearAction />}
           className="col-span-full"
         />
+
         {/* configurador */}
         <div className="config-col">
           <div className="panel cat-tabs-wrap">
@@ -155,61 +229,15 @@ function GeneratorBody() {
           </AnimatePresence>
         </div>
 
-        {/* checkout */}
-        <div className="checkout-col">
-          <button
-            type="button"
-            className="btn btn--ghost drawer-close"
-            style={{ alignSelf: 'flex-end' }}
-            onClick={() => setDrawerOpen(false)}
-          >
-            {CloseIcon}Fechar
-          </button>
-
-          <ClientForm />
-          <BudgetCart />
-          <Conditions />
-
-          <div className="panel glass-panel">
-            <Totals />
-            <div className="col" style={{ marginTop: 18 }}>
-              <button type="button" className="btn btn--primary btn--block btn--lg" onClick={doPrint}>
-                {PrintIcon}Gerar orçamento / Imprimir
-              </button>
-              <div className="row" style={{ gap: 10 }}>
-                <button type="button" className="btn btn--ghost" style={{ flex: 1 }} onClick={() => setPreviewOpen(true)}>
-                  {EyeIcon}Visualizar A4
-                </button>
-                <button type="button" className="btn btn--ghost" style={{ flex: 1 }} onClick={sendWhatsApp}>
-                  {WaIcon}WhatsApp
-                </button>
-              </div>
-              <div className="row" style={{ gap: 10, marginTop: 10 }}>
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  style={{ flex: 1 }}
-                  disabled={saving || !budget.cart.length}
-                  onClick={() => saveBudget('open')}
-                >
-                  {SaveIcon} Salvar Aberto
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  style={{ flex: 1, backgroundColor: '#10b981', borderColor: '#10b981' }}
-                  disabled={saving || !budget.cart.length}
-                  onClick={() => saveBudget('won')}
-                >
-                  {SaveIcon} Salvar Fechado
-                </button>
-              </div>
-            </div>
+        {/* checkout — desktop: coluna normal; mobile: controlado pelo AnimatePresence abaixo */}
+        {!isMobile && (
+          <div className="checkout-col">
+            {CheckoutContent}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* mobile */}
+      {/* ── MOBILE: FAB + backdrop + bottom-sheet drawer ── */}
       <button type="button" className="cart-fab no-print" onClick={() => setDrawerOpen(true)}>
         {FabIcon}Orçamento{' '}
         <AnimatePresence mode="popLayout" initial={false}>
@@ -225,7 +253,40 @@ function GeneratorBody() {
           </motion.span>
         </AnimatePresence>
       </button>
-      <div className="drawer-backdrop no-print" onClick={() => setDrawerOpen(false)} />
+
+      <AnimatePresence>
+        {isMobile && drawerOpen && (
+          <>
+            {/* backdrop */}
+            <motion.div
+              className="drawer-backdrop no-print"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={() => setDrawerOpen(false)}
+            />
+
+            {/* bottom-sheet drawer com drag-to-close */}
+            <motion.div
+              className="checkout-col no-print"
+              variants={drawerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              transition={drawerSpring}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0.05, bottom: 0.3 }}
+              onDragEnd={(_, info) => {
+                if (info.velocity.y > 180 || info.offset.y > 140) setDrawerOpen(false)
+              }}
+            >
+              {CheckoutContent}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* impressão / preview */}
       <PrintSheet />
