@@ -1,25 +1,51 @@
-import AppHeader from '../components/app/AppHeader.jsx'
+"use client"
+
+import AppHeader from '../../components/app/AppHeader'
 
 /* Dados ilustrativos (porta de metrics.js). */
-const months = [
+interface MonthData {
+  m: string
+  v: number
+}
+const months: MonthData[] = [
   { m: 'Dez', v: 248 }, { m: 'Jan', v: 196 }, { m: 'Fev', v: 271 },
   { m: 'Mar', v: 243 }, { m: 'Abr', v: 289 }, { m: 'Mai', v: 312 },
 ]
-const mix = [
+
+interface MixData {
+  nm: string
+  v: number
+  c: string
+}
+const mix: MixData[] = [
   { nm: 'Kit Esportivo', v: 34, c: '#AF0608' },
   { nm: 'Estampa Total', v: 23, c: '#D90429' },
   { nm: 'Camisa de Malha', v: 18, c: '#f59e0b' },
   { nm: 'Abadás', v: 14, c: '#10b981' },
   { nm: 'Outros', v: 11, c: '#9ca3af' },
 ]
-const rank = [
+
+interface RankData {
+  nm: string
+  v: string
+  pct: number
+}
+const rank: RankData[] = [
   { nm: 'Kit Esportivo', v: '62 orç.', pct: 100 },
   { nm: 'Estampa Total', v: '48 orç.', pct: 77 },
   { nm: 'Camisa de Malha', v: '39 orç.', pct: 63 },
   { nm: 'Abadás', v: '28 orç.', pct: 45 },
   { nm: 'Linha Social', v: '19 orç.', pct: 31 },
 ]
-const recent = [
+
+interface RecentData {
+  cli: string
+  cat: string
+  val: string
+  st: 'won' | 'open' | 'lost'
+  lbl: string
+}
+const recent: RecentData[] = [
   { cli: 'Academia Fitness', cat: 'Camisa de Malha', val: 'R$ 10.018', st: 'won', lbl: 'Fechado' },
   { cli: 'Escolinha Craque BA', cat: 'Kit Esportivo', val: 'R$ 8.640', st: 'won', lbl: 'Fechado' },
   { cli: 'Bloco Unidos do Sul', cat: 'Abadás', val: 'R$ 14.200', st: 'open', lbl: 'Em aberto' },
@@ -28,7 +54,14 @@ const recent = [
   { cli: 'Prefeitura — Eventos', cat: 'Bandeiras', val: 'R$ 3.260', st: 'lost', lbl: 'Perdido' },
 ]
 
-const KPIS = [
+interface KpiData {
+  label: string
+  value: string
+  delta: string
+  cmp: string
+  icon: JSX.Element
+}
+const KPIS: KpiData[] = [
   { label: 'Orçamentos gerados', value: '184', delta: '+12%', cmp: 'vs. abril', icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></> },
   { label: 'Ticket médio', value: 'R$ 4.380', delta: '+6%', cmp: 'vs. abril', icon: <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /> },
   { label: 'Taxa de fechamento', value: '38%', delta: '+3pp', cmp: 'vs. abril', icon: <><path d="M22 12A10 10 0 1 1 12 2v10Z" /><path d="M12 2a10 10 0 0 1 10 10H12Z" /></> },

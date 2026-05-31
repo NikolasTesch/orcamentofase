@@ -1,5 +1,5 @@
 // Tabela de Preços estruturada para a Faze Sport
-export const pricesData = {
+export const pricesData: any = {
   "kit_esportivo": {
     "kits": {
       "KIT PRATA": {

@@ -6,10 +6,10 @@ Este documento define os requisitos de produto, regras de negócio e especifica�
 
 ## 1. Controle de Documentação
 - **Produto**: Gerador de Orçamentos Fase Esporte
-- **Status**: Em Planejamento / Especificação
+- **Status**: Em Produção / Homologado
 - **Autor**: Antigravity (AI Pair Programmer)
-- **Data**: 30 de Maio de 2026
-- **Versão**: 1.0 (Inicial)
+- **Data**: 31 de Maio de 2026
+- **Versão**: 2.0 (Next.js & TypeScript)
 
 ---
 
@@ -25,7 +25,9 @@ Atualmente, o time de vendas da **Fase Esporte** utiliza um fluxo de trabalho ma
 Esse processo consome muito tempo e gera frequentes erros de cálculo de preços unitários e formatação na descrição técnica das peças.
 
 ### 2.2. Proposta de Valor
-Desenvolver uma aplicação web estática interativa e responsiva em React. O vendedor poderá configurar qualquer peça da Fase Esporte por meio de cliques rápidos em botões intuitivos. A aplicação calculará instantaneamente o preço unitário (usando a tabela de preços oficiais convertida para JS), gerará a descrição técnica formatada e criará uma visualização de orçamento limpa em formato A4, pronta para impressão ou exportação em PDF.
+Desenvolver uma aplicação web interativa e responsiva em **Next.js** e **TypeScript** estruturada em rotas nativas (App Router). O vendedor poderá configurar qualquer peça da Fase Esporte por meio de cliques rápidos em botões intuitivos. A aplicação calculará instantaneamente o preço unitário (usando a tabela de preços oficiais convertida para TS), gerará a descrição técnica formatada e criará uma visualização de orçamento limpa em formato A4, pronta para impressão ou exportação em PDF. 
+
+Além disso, disponibiliza painéis administrativos específicos para acompanhamento de **Métricas Comerciais** e **Edição Rápida da Tabela de Preços** diretamente pela interface do navegador.
 
 ### 2.3. Público-Alvo
 - Vendedores comerciais e representantes da Fase Esporte (utilizando tanto em desktops na loja física quanto em smartphones em atendimentos externos via WhatsApp).
@@ -61,16 +63,18 @@ Mapeamos as funcionalidades do sistema utilizando a metodologia MoSCoW (*Must Ha
 ### 4.2. Should Have (Desejável)
 - **Modo Escuro / Modo Claro (Dark/Light Mode)**: Alternador de visualização para melhor conforto visual do vendedor, mantendo a impressão em A4 sempre em fundo claro econômico.
 - **Parcerias Pré-configuradas**: Dropdown de seleção de parceiros comerciais oficiais para aplicação em 1 clique de descontos específicos.
-- **Avisos Visuais Dinâmicos**: Mensagens e alertas caso o usuário tente selecionar regras inválidas (ex: "Não é permitido colocar numeração em camisas promocionais").
+- **Avisos Visuais Dinâmicos**: Mensagens e alertas caso o usuário tente selecionar regras inválidas.
+- **Tabela de Preços Visual e Editável**: Área administrativa dedicada (`/tabela`) que permite a edição dos valores em tempo real e a persistência em memória local (`localStorage`).
+- **Dashboard de Métricas Comerciais**: Visualização em gráficos reativos e KPIs analíticos do faturamento estimado, tickets e taxas de fechamento sob `/metricas`.
 
 ### 4.3. Could Have (Poderia Ter)
 - **WhatsApp Direct**: Botão para abrir o WhatsApp Web diretamente com o texto resumido do orçamento formatado em markdown para envio rápido.
 - **Personalização Dinâmica de Condições**: Área de configurações gerais onde o vendedor pode alterar de forma pontual a validade padrão (07 dias) ou prazo de entrega (30 dias).
+- **Design System Visual Interativo**: Guia estrito de marca, cores, tipografias e comportamento em `/design-system`.
 
 ### 4.4. Won't Have (Fora de Escopo do MVP)
 - **Autenticação de Usuários**: Sem login/senha de vendedores nesta etapa.
-- **Banco de Dados em Nuvem**: Sem persistência em servidor ou histórico de orçamentos salvos online (aplicação é estática e roda localmente).
-- **Cadastro Dinâmico de Produtos na Tela**: A alteração de preços deve ser feita direto no arquivo de dados `prices.js` no código fonte, sem painel administrativo visual.
+- **Banco de Dados em Nuvem**: Sem persistência em servidor ou histórico de orçamentos salvos online (aplicação armazena em memória local e localStorage de forma segura).
 
 ---
 
@@ -122,9 +126,4 @@ Toda proposta formalizada deve exibir obrigatoriamente a divisão financeira pad
   - Visual de "vidro desfocado" (glassmorphism) nos painéis de controle.
   - Interface adaptável para celulares e tablets (Mobile-First Friendly).
 - **RNF-03: Compatibilidade de Impressão**: O CSS `@media print` deve garantir formatação impecável em navegadores baseados em Chromium (Google Chrome, Microsoft Edge) e Mozilla Firefox nas configurações padrão de folha A4.
-- **RNF-04: Segurança e Custos**: Aplicação estática (Static Web App). Não consome recursos de banco de dados SQL e pode ser hospedada de forma gratuita em redes globais CDN (Vercel, Netlify ou GitHub Pages).
-
----
-
-Este PRD estabelece os limites, escopos e as metas de produto para o Gerador de Orçamentos Fase Esporte. Ele serve como base definitiva para o design da interface no Claude Design e posterior codificação no React.
-
+- **RNF-04: Segurança e Custos**: Aplicação hospedável gratuitamente em redes CDN globais (Vercel, Netlify ou GitHub Pages) por ser compilada de forma estática no build do Next.js.

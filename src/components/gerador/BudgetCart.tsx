@@ -1,5 +1,7 @@
-import { useBudget } from '../../context/budget-context.js'
-import { fmtBRL } from '../../data/pricebook.js'
+"use client"
+
+import { useBudget, CartItem } from '../../context/budget-context'
+import { fmtBRL } from '../../data/pricebook'
 
 const CartIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -8,12 +10,22 @@ const CartIcon = (
     <circle cx="18" cy="20" r="1.4" />
   </svg>
 )
+
 const TrashIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
   </svg>
 )
-const DiscountTag = ({ info }) =>
+
+interface DiscountTagProps {
+  info: {
+    kind: 'exempt' | 'discount' | 'none'
+    d: number
+    short?: string
+  }
+}
+
+const DiscountTag = ({ info }: DiscountTagProps) =>
   info.kind === 'exempt' ? (
     <span className="tag tag--exempt">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -52,7 +64,7 @@ export default function BudgetCart() {
             Configure uma peça e clique em <b>Adicionar</b>.
           </div>
         ) : (
-          cart.map((it) => {
+          cart.map((it: CartItem) => {
             const info = partnerInfo(it)
             const gross = it.unit * it.qty
             const net = gross * (1 - info.d / 100)

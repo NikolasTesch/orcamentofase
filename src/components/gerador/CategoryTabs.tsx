@@ -1,13 +1,15 @@
+"use client"
+
 import { motion } from 'framer-motion'
-import { CATEGORIES } from '../../data/pricebook.js'
-import { useBudget } from '../../context/budget-context.js'
+import { CATEGORIES, Category } from '../../data/pricebook'
+import { useBudget } from '../../context/budget-context'
 
 /* Abas de categoria com indicador líquido (framer-motion layoutId · spring). */
 export default function CategoryTabs() {
   const { activeCat, setActiveCat } = useBudget()
   return (
     <div className="tabs cat-tabs" style={{ position: 'relative' }}>
-      {CATEGORIES.map((c) => (
+      {CATEGORIES.map((c: Category) => (
         <button
           key={c.id}
           type="button"

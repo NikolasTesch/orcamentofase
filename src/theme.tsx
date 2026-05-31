@@ -1,21 +1,35 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ThemeContext, useTheme } from './theme-context.js'
+"use client"
+
+import { useCallback, useEffect, useState, ReactNode } from 'react'
+import { ThemeContext, useTheme } from './theme-context'
 
 /* ============================================================
    Tema (escuro padrão / claro alternável) + acento de marca.
    Porta o comportamento de fase-guide.js para React.
    ============================================================ */
 
-function readInitialTheme() {
+function readInitialTheme(): string {
   try {
-    return localStorage.getItem('fase-theme') || 'dark'
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('fase-theme') || 'dark'
+    }
   } catch {
-    return 'dark'
+    /* localStorage indisponível */
   }
+  return 'dark'
 }
 
-export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(readInitialTheme)
+interface ThemeProviderProps {
+  children: ReactNode
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [theme, setTheme] = useState<string>('dark') // Padrão 'dark' no SSR para evitar flashes indesejados.
+
+  useEffect(() => {
+    // Sincroniza o tema inicial após a hidratação no cliente.
+    setTheme(readInitialTheme())
+  }, [])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -35,7 +49,7 @@ export function ThemeProvider({ children }) {
   )
 }
 
-/* ---------- Ícones sol/lua (idênticos ao guia) ---------- */
+/* ---------- Ícones sol/lua ---------- */
 const SunIcon = (
   <>
     <circle cx="12" cy="12" r="4" />
@@ -58,19 +72,26 @@ export function ThemeToggle() {
 }
 
 /* ---------- Trocadores de acento de marca ---------- */
-const ACCENTS = [
+interface Accent {
+  c: string
+  hover: string
+  title: string
+}
+
+const ACCENTS: Accent[] = [
   { c: '#AF0608', hover: '#D90429', title: 'Fase RED' },
   { c: '#D90429', hover: '#F11D3B', title: 'Carmim' },
   { c: '#E11D48', hover: '#F43F5E', title: 'Rosa intenso' },
 ]
 
 export function AccentSwatches() {
-  const [active, setActive] = useState(null)
+  const [active, setActive] = useState<string | null>(null)
 
-  const apply = useCallback((accent) => {
+  const apply = useCallback((accent: Accent) => {
     const root = document.documentElement
     const { c, hover } = accent
-    const rgb = c.match(/\w\w/g).map((h) => parseInt(h, 16))
+    const rgb = c.match(/\w\w/g)?.map((h) => parseInt(h, 16))
+    if (!rgb) return
     root.style.setProperty('--fase-red', c)
     root.style.setProperty('--fase-red-hover', hover)
     root.style.setProperty('--fase-red-12', `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.12)`)

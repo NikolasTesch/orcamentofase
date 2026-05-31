@@ -1,4 +1,6 @@
-import { useBudget } from '../../context/budget-context.js'
+"use client"
+
+import { useBudget } from '../../context/budget-context'
 
 export default function ClientForm() {
   const { client, setClient, partners } = useBudget()
@@ -32,7 +34,7 @@ export default function ClientForm() {
               value={client.partnership}
               onChange={(e) => setClient({ partnership: e.target.value })}
             >
-              {partners.map((p) => (
+              {partners.map((p: string) => (
                 <option key={p}>{p}</option>
               ))}
             </select>

@@ -1,10 +1,20 @@
-import { NavLink } from 'react-router-dom'
-import { useTheme } from '../../theme-context.js'
-import { ThemeToggle } from '../../theme.jsx'
+"use client"
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useTheme } from '../../theme-context'
+import { ThemeToggle } from '../../theme'
 import logoBranco from '../../assets/logo-fase-branco.svg'
 import logoPreto from '../../assets/logo-fase-preto.svg'
+import { ReactNode } from 'react'
 
-const NAV = [
+interface NavItem {
+  to: string
+  label: string
+  icon: ReactNode
+}
+
+const NAV: NavItem[] = [
   {
     to: '/',
     label: 'Gerador',
@@ -34,13 +44,21 @@ const NAV = [
   },
 ]
 
-export default function AppHeader({ title, subtitle, actions }) {
+interface AppHeaderProps {
+  title: string
+  subtitle: string
+  actions?: ReactNode
+}
+
+export default function AppHeader({ title, subtitle, actions }: AppHeaderProps) {
   const { theme } = useTheme()
   const logo = theme === 'light' ? logoPreto : logoBranco
+  const pathname = usePathname() || '/'
+
   return (
     <header className="app-header no-print">
       <div className="app-header__brand">
-        <img src={logo} alt="Fase Esporte" />
+        <img src={logo.src || logo} alt="Fase Esporte" />
         <div className="div" />
         <div>
           <div className="name">{title}</div>
@@ -48,14 +66,17 @@ export default function AppHeader({ title, subtitle, actions }) {
         </div>
       </div>
       <nav className="app-nav">
-        {NAV.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.to === '/'} className={({ isActive }) => (isActive ? 'active' : undefined)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-              {n.icon}
-            </svg>
-            <span>{n.label}</span>
-          </NavLink>
-        ))}
+        {NAV.map((n) => {
+          const active = n.to === '/' ? pathname === '/' : pathname.startsWith(n.to)
+          return (
+            <Link key={n.to} href={n.to} className={active ? 'active' : undefined}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+                {n.icon}
+              </svg>
+              <span>{n.label}</span>
+            </Link>
+          )
+        })}
       </nav>
       <div className="app-header__actions">
         {actions}

@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react'
-import { useTheme } from '../../theme-context.js'
+"use client"
+
+import { useEffect, useState, MouseEvent } from 'react'
+import { useTheme } from '../../theme-context'
 import logoBranco from '../../assets/logo-fase-branco.svg'
 import logoPreto from '../../assets/logo-fase-preto.svg'
 
-const NAV_ITEMS = [
+interface NavItem {
+  id: string
+  label: string
+  icon: JSX.Element
+}
+
+const NAV_ITEMS: NavItem[] = [
   { id: 'marca', label: 'Marca', icon: <><path d="M12 2 2 7l10 5 10-5-10-5Z" /><path d="m2 17 10 5 10-5M2 12l10 5 10-5" /></> },
   { id: 'cores', label: 'Cores', icon: <><circle cx="13.5" cy="6.5" r="2.5" /><circle cx="19" cy="13" r="2.5" /><circle cx="6" cy="12" r="2.5" /><circle cx="10" cy="20" r="2.5" /></> },
   { id: 'tipografia', label: 'Tipografia', icon: <path d="M4 7V4h16v3M9 20h6M12 4v16" /> },
@@ -19,7 +27,7 @@ export default function Nav() {
   const [active, setActive] = useState('marca')
 
   useEffect(() => {
-    const sections = NAV_ITEMS.map((i) => document.getElementById(i.id)).filter(Boolean)
+    const sections = NAV_ITEMS.map((i) => document.getElementById(i.id)).filter((el): el is HTMLElement => el !== null)
     const spy = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && setActive(e.target.id)),
       { rootMargin: '-30% 0px -60% 0px' },
@@ -28,7 +36,7 @@ export default function Nav() {
     return () => spy.disconnect()
   }, [])
 
-  const handleClick = (e, id) => {
+  const handleClick = (e: MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault()
     const t = document.getElementById(id)
     if (t) window.scrollTo({ top: t.offsetTop - 60, behavior: 'smooth' })
@@ -37,7 +45,7 @@ export default function Nav() {
   return (
     <aside className="nav">
       <div className="nav__logo">
-        <img src={logo} alt="Fase Esporte" />
+        <img src={logo.src || logo} alt="Fase Esporte" />
       </div>
       <p className="nav__tag">Design System</p>
       {NAV_ITEMS.map((item) => (

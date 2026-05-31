@@ -1,22 +1,32 @@
-import { A4Body } from './PrintSheet.jsx'
+"use client"
+
+import { A4Body } from './PrintSheet'
+import { MouseEvent } from 'react'
 
 const PrintIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6Z" />
   </svg>
 )
+
 const CloseIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 6 6 18M6 6l12 12" />
   </svg>
 )
 
+interface PreviewModalProps {
+  open: boolean
+  onClose: () => void
+  onPrint: () => void
+}
+
 /* Pré-visualização do A4 em modal (porta openModal/closeModal de app.js). */
-export default function PreviewModal({ open, onClose, onPrint }) {
+export default function PreviewModal({ open, onClose, onPrint }: PreviewModalProps) {
   return (
     <div
       className={`modal no-print${open ? ' open' : ''}`}
-      onClick={(e) => {
+      onClick={(e: MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >

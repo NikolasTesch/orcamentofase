@@ -7,16 +7,29 @@
 
 const STORE_KEY = 'fase_pricebook_v2'
 
-export const BRACKETS = [
+export interface Bracket {
+  label: string
+  min: number
+  max: number
+}
+
+export const BRACKETS: Bracket[] = [
   { label: '10–50', min: 10, max: 50 },
   { label: '51–100', min: 51, max: 100 },
   { label: '101–300', min: 101, max: 300 },
   { label: '301–500', min: 301, max: 500 },
   { label: '501+', min: 501, max: Infinity },
 ]
-export const bracketIndex = (q) => (q <= 50 ? 0 : q <= 100 ? 1 : q <= 300 ? 2 : q <= 500 ? 3 : 4)
 
-export const PARTNERS = {
+export const bracketIndex = (q: number): number => (q <= 50 ? 0 : q <= 100 ? 1 : q <= 300 ? 2 : q <= 500 ? 3 : 4)
+
+export interface PartnerRate {
+  kit: number
+  esportivo: number
+  promocional: number
+}
+
+export const PARTNERS: Record<string, PartnerRate | null> = {
   Nenhuma: null,
   'Escolinhas de Futebol': { kit: 25, esportivo: 15, promocional: 0 },
   Academias: { kit: 50, esportivo: 30, promocional: 0 },
@@ -25,16 +38,21 @@ export const PARTNERS = {
   'Revendedores BA': { kit: 15, esportivo: 15, promocional: 15 },
   'Bola na Rede Medeiros Neto': { kit: 20, esportivo: 20, promocional: 10 },
 }
+
 // Abadá é sempre isento de desconto de parceria (regra de evento).
-export const partnerDiscount = (partner, kind) =>
-  kind === 'abada' ? 0 : PARTNERS[partner] ? PARTNERS[partner][kind] || 0 : 0
+export const partnerDiscount = (partner: string, kind: string): number => {
+  if (kind === 'abada') return 0
+  const rate = PARTNERS[partner]
+  if (!rate) return 0
+  return (rate as any)[kind] || 0
+}
 
 const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-export const fmtBRL = (n) => BRL.format(n || 0)
-const clone = (o) => JSON.parse(JSON.stringify(o))
+export const fmtBRL = (n: number): string => BRL.format(n || 0)
+const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o))
 
 /* ---- valores padrão (ajustados) ---- */
-export const DEFAULT_PB = {
+export const DEFAULT_PB: Record<string, any> = {
   kit_esportivo: {
     kit: { prata: 72, ouro: 94, prof: 128, premium: 168 },
     extras: { nome: 7, colete: 22, goleiro: 38, meiao: 12 },
@@ -87,16 +105,19 @@ export const DEFAULT_PB = {
 
 /* ---- estado mutável + persistência ---- */
 let PB = loadPB()
-function loadPB() {
+function loadPB(): Record<string, any> {
   try {
-    const s = JSON.parse(localStorage.getItem(STORE_KEY))
-    if (s) return deepMerge(clone(DEFAULT_PB), s)
+    if (typeof window !== 'undefined') {
+      const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null')
+      if (s) return deepMerge(clone(DEFAULT_PB), s)
+    }
   } catch {
     /* localStorage indisponível / JSON inválido */
   }
   return clone(DEFAULT_PB)
 }
-function deepMerge(base, over) {
+
+function deepMerge(base: any, over: any): any {
   for (const k in over) {
     if (over[k] && typeof over[k] === 'object' && !Array.isArray(over[k])) {
       base[k] = base[k] || {}
@@ -105,44 +126,56 @@ function deepMerge(base, over) {
   }
   return base
 }
-const subs = new Set()
+
+const subs = new Set<() => void>()
+
 export function savePB() {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(PB))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORE_KEY, JSON.stringify(PB))
+    }
   } catch {
     /* ignore */
   }
   subs.forEach((f) => f())
 }
+
 export function resetPB() {
   PB = clone(DEFAULT_PB)
   try {
-    localStorage.removeItem(STORE_KEY)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORE_KEY)
+    }
   } catch {
     /* ignore */
   }
   subs.forEach((f) => f())
 }
-export function subscribe(fn) {
+
+export function subscribe(fn: () => void) {
   subs.add(fn)
   return () => subs.delete(fn)
 }
+
 export const getPB = () => PB
 
 /* ---- acessores usados pelas funções de preço ---- */
-const N = (cat, g, k) => {
-  const o = PB[cat][g]
+const N = (cat: string, g: string, k: string): number => {
+  const o = PB[cat]?.[g]
   return o && typeof o[k] === 'number' ? o[k] : 0
 }
-const M = (cat, g, k, b) => {
-  const a = PB[cat][g][k]
+
+const M = (cat: string, g: string, k: string, b: number): number => {
+  const a = PB[cat]?.[g]?.[k]
   return a ? a[b] || 0 : 0
 }
-const R = (cat, g, b) => {
-  const a = PB[cat][g]
+
+const R = (cat: string, g: string, b: number): number => {
+  const a = PB[cat]?.[g]
   return a ? a[b] || 0 : 0
 }
-const sumC = (cat, g, arr) => (arr || []).reduce((s, v) => s + N(cat, g, v), 0)
+
+const sumC = (cat: string, g: string, arr: string[]): number => (arr || []).reduce((s, v) => s + N(cat, g, v), 0)
 
 /* ---- ícones (path d) das categorias ---- */
 const ico = {
@@ -156,16 +189,43 @@ const ico = {
   bandeira: 'M5 3v18M5 4h11l-2 4 2 4H5',
   abada: 'M9 4 4 9l5 11h6l5-11-5-5-3 2-3-2Z',
 }
-const lbl = (sel, v) => {
+
+const lbl = (sel: CategorySelector, v: string): string => {
   const o = sel.options.find((o) => o.v === v)
   return o ? o.label : v
 }
-const checks = (cat, key, st) => {
+
+const checks = (cat: Category, key: string, st: any): string[] => {
   const sel = cat.selectors.find((s) => s.key === key)
-  return (st[key] || []).map((v) => lbl(sel, v))
+  if (!sel) return []
+  return (st[key] || []).map((v: string) => lbl(sel, v))
 }
 
-export const CATEGORIES = [
+export interface CategoryOption {
+  v: string
+  label: string
+}
+
+export interface CategorySelector {
+  key: string
+  label: string
+  type: 'radio' | 'check'
+  options: CategoryOption[]
+}
+
+export interface Category {
+  id: string
+  label: string
+  icon: string
+  kind: 'kit' | 'esportivo' | 'promocional' | 'abada'
+  brackets: boolean
+  selectors: CategorySelector[]
+  defaults: Record<string, any>
+  price: (st: any, b: number | null) => number
+  describe: (st: any) => string
+}
+
+export const CATEGORIES: Category[] = [
   {
     id: 'kit_esportivo',
     label: 'Kit Esportivo',
@@ -197,10 +257,10 @@ export const CATEGORIES = [
       },
     ],
     defaults: { kit: 'prata', extras: [] },
-    price(st) {
+    price(st: any) {
       return N(this.id, 'kit', st.kit) + sumC(this.id, 'extras', st.extras)
     },
-    describe(st) {
+    describe(st: any) {
       let d = `KIT ${lbl(this.selectors[0], st.kit).toUpperCase()} Fase Esporte (Camisa Dry, Short Dry, Meião 5 fios)`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' + ' + e.join(', ')
@@ -249,10 +309,10 @@ export const CATEGORIES = [
       },
     ],
     defaults: { gola: 'polo', tecido: 'PV', extras: ['ml'] },
-    price(st, b) {
-      return M(this.id, 'tecMatrix', st.tecido, b) + N(this.id, 'gola', st.gola) + sumC(this.id, 'extras', st.extras)
+    price(st: any, b: number | null) {
+      return M(this.id, 'tecMatrix', st.tecido, b || 0) + N(this.id, 'gola', st.gola) + sumC(this.id, 'extras', st.extras)
     },
-    describe(st) {
+    describe(st: any) {
       let d = `CAMISA MALHA - ${lbl(this.selectors[0], st.gola)} - Tecido ${st.tecido}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
@@ -309,15 +369,15 @@ export const CATEGORIES = [
       },
     ],
     defaults: { area: 'fc', gola: 'redonda', tecido: 'DRY', extras: [] },
-    price(st, b) {
+    price(st: any, b: number | null) {
       return (
-        M(this.id, 'areaMatrix', st.area, b) +
+        M(this.id, 'areaMatrix', st.area, b || 0) +
         N(this.id, 'gola', st.gola) +
         N(this.id, 'tecido', st.tecido) +
         sumC(this.id, 'extras', st.extras)
       )
     },
-    describe(st) {
+    describe(st: any) {
       let d = `CAMISA SUBLIMADA TOTAL - ${lbl(this.selectors[1], st.gola)} - Tecido ${st.tecido} - Estampa ${lbl(this.selectors[0], st.area)}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
@@ -371,16 +431,16 @@ export const CATEGORIES = [
       },
     ],
     defaults: { cor: 'branca', config: 'pc', area: 'lisa', fotos: [] },
-    price(st, b) {
+    price(st: any, b: number | null) {
       return (
-        R(this.id, 'baseRow', b) +
+        R(this.id, 'baseRow', b || 0) +
         N(this.id, 'cor', st.cor) +
         N(this.id, 'config', st.config) +
         N(this.id, 'area', st.area) +
         sumC(this.id, 'fotos', st.fotos)
       )
     },
-    describe(st) {
+    describe(st: any) {
       let d = `CAMISA PP PROMOCIONAL ${lbl(this.selectors[0], st.cor)} - Modelo ${lbl(this.selectors[1], st.config)} - Estampa ${lbl(this.selectors[2], st.area)}`
       const e = checks(this, 'fotos', st)
       if (e.length) d += ' - ' + e.join(' - ')
@@ -427,10 +487,10 @@ export const CATEGORIES = [
       },
     ],
     defaults: { peca: 'mc', tecido: 'Unioffice', extras: [] },
-    price(st) {
+    price(st: any) {
       return N(this.id, 'peca', st.peca) + N(this.id, 'tecido', st.tecido) + sumC(this.id, 'extras', st.extras)
     },
-    describe(st) {
+    describe(st: any) {
       let d = `${lbl(this.selectors[0], st.peca)} - Tecido ${st.tecido}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' + ' + e.join(' + ')
@@ -485,10 +545,10 @@ export const CATEGORIES = [
       },
     ],
     defaults: { linha: 'Tactel', peca: 'bermuda', faixa: 'Adulto', extras: [] },
-    price(st) {
+    price(st: any) {
       return N(this.id, 'peca', st.peca) + N(this.id, 'linha', st.linha) + N(this.id, 'faixa', st.faixa) + sumC(this.id, 'extras', st.extras)
     },
-    describe(st) {
+    describe(st: any) {
       let d = `${lbl(this.selectors[1], st.peca)} de ${st.linha} - Linha ${st.faixa}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
@@ -534,10 +594,10 @@ export const CATEGORIES = [
       },
     ],
     defaults: { acab: 'simples', tam: 'm', extras: [] },
-    price(st) {
+    price(st: any) {
       return N(this.id, 'acab', st.acab) * N(this.id, 'tamM2', st.tam) + sumC(this.id, 'extras', st.extras)
     },
-    describe(st) {
+    describe(st: any) {
       let d = `Bandeira Sublimada ${lbl(this.selectors[0], st.acab)} - Medida ${lbl(this.selectors[1], st.tam)}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(', ') + ' inclusos'
@@ -568,10 +628,10 @@ export const CATEGORIES = [
       },
     ],
     defaults: { tecido: 'dry', extras: [] },
-    price(st, b) {
-      return R(this.id, 'baseRow', b) + N(this.id, 'tecido', st.tecido) + sumC(this.id, 'extras', st.extras)
+    price(st: any, b: number | null) {
+      return R(this.id, 'baseRow', b || 0) + N(this.id, 'tecido', st.tecido) + sumC(this.id, 'extras', st.extras)
     },
-    describe(st) {
+    describe(st: any) {
       let d = `ABADÁ DE EVENTO (Sem Manga) - Tecido ${lbl(this.selectors[0], st.tecido)} - Sublimação Frente e Costas`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
@@ -579,15 +639,17 @@ export const CATEGORIES = [
     },
   },
 ]
-export const getCat = (id) => CATEGORIES.find((c) => c.id === id)
+
+export const getCat = (id: string) => CATEGORIES.find((c) => c.id === id)
 
 /* preço unitário de um item, considerando faixa de volume quando aplicável */
-export const computeUnit = (cat, st) =>
+export const computeUnit = (cat: Category, st: any): number =>
   Math.max(0, cat.price(st, cat.brackets ? bracketIndex(st.qty || 0) : null))
 
 /* ---- meta de exibição no configurador ---- */
-export function metaFor(catId, key, v) {
+export function metaFor(catId: string, key: string, v: string): string {
   const pb = PB[catId]
+  if (!pb) return ''
   if ((catId === 'camisa_malha' && key === 'tecido') || (catId === 'estampa_total' && key === 'area')) return 'base'
   if (catId === 'bandeira' && key === 'tam') return (pb.tamM2[v] + '').replace('.', ',') + ' m²'
   if (catId === 'bandeira' && key === 'acab') return 'R$' + pb.acab[v] + '/m²'
@@ -602,7 +664,7 @@ export function metaFor(catId, key, v) {
 }
 
 /* ---- schema para a tela de edição de preços ---- */
-const GROUP_TITLE = {
+const GROUP_TITLE: Record<string, string> = {
   kit: 'Preço por kit',
   tecMatrix: 'Preço base por tecido · por faixa de volume',
   areaMatrix: 'Preço base por área · por faixa de volume',
@@ -620,9 +682,12 @@ const GROUP_TITLE = {
   acab: 'Acabamento · R$ por m²',
   tamM2: 'Medida · área em m²',
 }
-const GROUP_SELECTOR = { tecMatrix: 'tecido', areaMatrix: 'area', tamM2: 'tam' }
-function subLabel(catId, group, subKey) {
+
+const GROUP_SELECTOR: Record<string, string> = { tecMatrix: 'tecido', areaMatrix: 'area', tamM2: 'tam' }
+
+function subLabel(catId: string, group: string, subKey: string): string {
   const cat = getCat(catId)
+  if (!cat) return subKey
   const selKey = GROUP_SELECTOR[group] || group
   const sel = cat.selectors.find((s) => s.key === selKey)
   if (sel) {
@@ -631,39 +696,62 @@ function subLabel(catId, group, subKey) {
   }
   return subKey
 }
-export function editSchema() {
+
+export interface EditSection {
+  type: 'row' | 'matrix' | 'list'
+  catId: string
+  group: string
+  title: string
+  cols?: string[]
+  rows?: { key: string; label: string }[]
+  items?: { key: string; label: string }[]
+}
+
+export interface EditCategorySchema {
+  catId: string
+  label: string
+  icon: string
+  kind: string
+  sections: EditSection[]
+}
+
+export function editSchema(): EditCategorySchema[] {
   return CATEGORIES.map((cat) => {
-    const sections = []
+    const sections: EditSection[] = []
     const data = PB[cat.id]
-    for (const group in data) {
-      const val = data[group]
-      const title = GROUP_TITLE[group] || group
-      if (Array.isArray(val)) {
-        sections.push({ type: 'row', catId: cat.id, group, title, cols: BRACKETS.map((b) => b.label) })
-      } else {
-        const keys = Object.keys(val)
-        if (Array.isArray(val[keys[0]])) {
-          sections.push({
-            type: 'matrix',
-            catId: cat.id,
-            group,
-            title,
-            cols: BRACKETS.map((b) => b.label),
-            rows: keys.map((k) => ({ key: k, label: subLabel(cat.id, group, k) })),
-          })
+    if (data) {
+      for (const group in data) {
+        const val = data[group]
+        const title = GROUP_TITLE[group] || group
+        if (Array.isArray(val)) {
+          sections.push({ type: 'row', catId: cat.id, group, title, cols: BRACKETS.map((b) => b.label) })
         } else {
-          sections.push({ type: 'list', catId: cat.id, group, title, items: keys.map((k) => ({ key: k, label: subLabel(cat.id, group, k) })) })
+          const keys = Object.keys(val)
+          if (keys.length > 0 && Array.isArray(val[keys[0]])) {
+            sections.push({
+              type: 'matrix',
+              catId: cat.id,
+              group,
+              title,
+              cols: BRACKETS.map((b) => b.label),
+              rows: keys.map((k) => ({ key: k, label: subLabel(cat.id, group, k) })),
+            })
+          } else {
+            sections.push({ type: 'list', catId: cat.id, group, title, items: keys.map((k) => ({ key: k, label: subLabel(cat.id, group, k) })) })
+          }
         }
       }
     }
     return { catId: cat.id, label: cat.label, icon: cat.icon, kind: cat.kind, sections }
   })
 }
-export function setPrice(catId, group, keyPath, value) {
+
+export function setPrice(catId: string, group: string, keyPath: any, value: string) {
   const v = parseFloat(value)
   if (isNaN(v)) return
   const node = PB[catId][group]
+  if (!node) return
   if (Array.isArray(node)) node[keyPath] = v // keyPath = bracket index
-  else if (Array.isArray(node[keyPath[0]])) node[keyPath[0]][keyPath[1]] = v // [subKey, bIdx]
+  else if (Array.isArray(keyPath) && Array.isArray(node[keyPath[0]])) node[keyPath[0]][keyPath[1]] = v // [subKey, bIdx]
   else node[keyPath] = v // keyPath = subKey
 }

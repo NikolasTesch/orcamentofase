@@ -1,13 +1,23 @@
-import { useBudget } from '../../context/budget-context.js'
-import { fmtBRL } from '../../data/pricebook.js'
+"use client"
+
+import { useBudget, CartItem } from '../../context/budget-context'
+import { fmtBRL } from '../../data/pricebook'
 import logoAllWhite from '../../assets/logo-fase-allwhite.svg'
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'image-slot': any
+    }
+  }
+}
 
 const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
 ]
 const MON = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
-const dec = (n) => n.toFixed(2).replace('.', ',')
+const dec = (n: number) => n.toFixed(2).replace('.', ',')
 
 /* Folha A4 do orçamento (porta updateSheet de app.js). Lê o estado comercial. */
 export function A4Body() {
@@ -18,7 +28,7 @@ export function A4Body() {
   return (
     <div className="a4">
       <div className="a4__hero">
-        <img className="a4__hero-logo" src={logoAllWhite} alt="Fase Esporte" />
+        <img className="a4__hero-logo" src={logoAllWhite.src || logoAllWhite} alt="Fase Esporte" />
         <div className="a4__hero-right">
           <div className="a4__hero-title">ORÇAMENTO</div>
           <div className="a4__hero-meta">
@@ -70,7 +80,7 @@ export function A4Body() {
         </thead>
         <tbody>
           {cart.length ? (
-            cart.map((it) => (
+            cart.map((it: CartItem) => (
               <tr key={it.uid}>
                 <td>{it.qty}</td>
                 <td>{it.desc}</td>
@@ -80,7 +90,7 @@ export function A4Body() {
             ))
           ) : (
             <tr>
-              <td colSpan="4" style={{ textAlign: 'center', padding: 18 }}>
+              <td colSpan={4} style={{ textAlign: 'center', padding: 18 }}>
                 Nenhum item no orçamento.
               </td>
             </tr>

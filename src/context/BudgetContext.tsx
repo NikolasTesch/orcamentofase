@@ -1,62 +1,75 @@
-import { useCallback, useMemo, useState } from 'react'
-import { BudgetContext } from './budget-context.js'
+"use client"
+
+import { useCallback, useMemo, useState, ReactNode } from 'react'
+import {
+  BudgetContext,
+  CartItem,
+  ClientData,
+  DiscountData,
+  ConditionsData,
+  BudgetContextValue,
+} from './budget-context'
 import {
   CATEGORIES,
   getCat,
   computeUnit,
   partnerDiscount,
   PARTNERS,
-} from '../data/pricebook.js'
+} from '../data/pricebook'
 
-const clone = (o) => JSON.parse(JSON.stringify(o))
+const clone = <T,>(o: T): T => JSON.parse(JSON.stringify(o))
 const uid = () => Date.now() + '' + Math.random().toString(36).slice(2, 6)
 
 // Config inicial por categoria: quantidade-base depende de haver faixa de volume.
 function initialConfig() {
-  const cfg = {}
+  const cfg: Record<string, any> = {}
   CATEGORIES.forEach((c) => {
     cfg[c.id] = Object.assign({ qty: c.brackets ? 100 : 12 }, clone(c.defaults))
   })
   return cfg
 }
 
+interface BudgetProviderProps {
+  children: ReactNode
+}
+
 /**
- * Provedor comercial central (porta app.js → React).
+ * Provedor comercial central.
  * Mantém configuração por categoria, carrinho, cliente, desconto e condições,
  * e expõe os totais calculados em tempo real.
  */
-export function BudgetProvider({ children }) {
-  const [activeCat, setActiveCat] = useState(CATEGORIES[0].id)
-  const [config, setConfig] = useState(initialConfig)
-  const [cart, setCart] = useState([])
-  const [client, setClient] = useState({ name: '', phone: '', partnership: 'Nenhuma' })
-  const [disc, setDisc] = useState({ type: 'percentage', value: 0 })
-  const [cond, setCond] = useState({ delivery: 30, validity: 7 })
+export function BudgetProvider({ children }: BudgetProviderProps) {
+  const [activeCat, setActiveCat] = useState<string>(CATEGORIES[0].id)
+  const [config, setConfig] = useState<Record<string, any>>(initialConfig)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [client, setClient] = useState<ClientData>({ name: '', phone: '', partnership: 'Nenhuma' })
+  const [disc, setDisc] = useState<DiscountData>({ type: 'percentage', value: 0 })
+  const [cond, setCond] = useState<ConditionsData>({ delivery: 30, validity: 7 })
 
   const cur = config[activeCat]
   const curCategory = getCat(activeCat)
 
   /* ---------- edição da configuração da categoria ativa ---------- */
   const selectRadio = useCallback(
-    (key, v) => setConfig((c) => ({ ...c, [activeCat]: { ...c[activeCat], [key]: v } })),
+    (key: string, v: any) => setConfig((c) => ({ ...c, [activeCat]: { ...c[activeCat], [key]: v } })),
     [activeCat],
   )
   const toggleCheck = useCallback(
-    (key, v) =>
+    (key: string, v: any) =>
       setConfig((c) => {
         const arr = c[activeCat][key] || []
-        const next = arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]
+        const next = arr.includes(v) ? arr.filter((x: any) => x !== v) : [...arr, v]
         return { ...c, [activeCat]: { ...c[activeCat], [key]: next } }
       }),
     [activeCat],
   )
   const setQty = useCallback(
-    (qty) =>
+    (qty: number) =>
       setConfig((c) => ({ ...c, [activeCat]: { ...c[activeCat], qty: Math.max(0, qty || 0) } })),
     [activeCat],
   )
   const bumpQty = useCallback(
-    (delta) =>
+    (delta: number) =>
       setConfig((c) => ({
         ...c,
         [activeCat]: { ...c[activeCat], qty: Math.max(0, (c[activeCat].qty || 0) + delta) },
@@ -67,6 +80,7 @@ export function BudgetProvider({ children }) {
   /* ---------- carrinho ---------- */
   const addToCart = useCallback(() => {
     const cat = getCat(activeCat)
+    if (!cat) return
     const st = config[activeCat]
     if (!st.qty) return
     setCart((list) => [
@@ -83,38 +97,42 @@ export function BudgetProvider({ children }) {
     ])
   }, [activeCat, config])
 
-  const removeFromCart = useCallback((id) => setCart((l) => l.filter((it) => it.uid !== id)), [])
+  const removeFromCart = useCallback((id: string) => setCart((l) => l.filter((it) => it.uid !== id)), [])
   const clearCart = useCallback(() => setCart([]), [])
 
   // Re-precifica itens com faixa de volume ao mudar a quantidade.
-  const setCartQty = useCallback((id, qty) => {
+  const setCartQty = useCallback((id: string, qty: number) => {
     setCart((l) =>
       l.map((it) => {
         if (it.uid !== id) return it
         const q = Math.max(1, qty || 1)
         const cat = getCat(it.catId)
+        if (!cat) return it
         const snap = { ...it.snap, qty: q }
         const unit = cat.brackets ? computeUnit(cat, snap) : it.unit
         return { ...it, qty: q, snap, unit }
       }),
     )
   }, [])
+
   const bumpCartQty = useCallback(
-    (id, delta) => setCart((l) => {
-      const it = l.find((x) => x.uid === id)
-      if (!it) return l
-      const q = Math.max(1, it.qty + delta)
-      const cat = getCat(it.catId)
-      const snap = { ...it.snap, qty: q }
-      const unit = cat.brackets ? computeUnit(cat, snap) : it.unit
-      return l.map((x) => (x.uid === id ? { ...x, qty: q, snap, unit } : x))
-    }),
+    (id: string, delta: number) =>
+      setCart((l) => {
+        const it = l.find((x) => x.uid === id)
+        if (!it) return l
+        const q = Math.max(1, it.qty + delta)
+        const cat = getCat(it.catId)
+        if (!cat) return l
+        const snap = { ...it.snap, qty: q }
+        const unit = cat.brackets ? computeUnit(cat, snap) : it.unit
+        return l.map((x) => (x.uid === id ? { ...x, qty: q, snap, unit } : x))
+      }),
     [],
   )
 
   /* ---------- desconto de parceria por item ---------- */
   const partnerInfo = useCallback(
-    (it) => {
+    (it: CartItem): { kind: 'exempt' | 'discount' | 'none'; d: number; short?: string } => {
       const d = partnerDiscount(client.partnership, it.kind)
       if (client.partnership !== 'Nenhuma' && it.kind === 'abada') return { kind: 'exempt', d: 0 }
       if (d > 0) return { kind: 'discount', d, short: client.partnership.split(' ')[0] }
@@ -144,7 +162,7 @@ export function BudgetProvider({ children }) {
     return { sub, partnerDisc, add, net, entry, hasAbadaExempt }
   }, [cart, client.partnership, disc])
 
-  const value = {
+  const value: BudgetContextValue = {
     // estado
     activeCat,
     config,

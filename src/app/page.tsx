@@ -1,45 +1,52 @@
-import { useState } from 'react'
-import { BudgetProvider } from '../context/BudgetContext.jsx'
-import { useBudget } from '../context/budget-context.js'
-import { fmtBRL } from '../data/pricebook.js'
+"use client"
 
-import AppHeader from '../components/app/AppHeader.jsx'
-import CategoryTabs from '../components/gerador/CategoryTabs.jsx'
-import Configurator from '../components/gerador/Configurator.jsx'
-import Simulator from '../components/gerador/Simulator.jsx'
-import ClientForm from '../components/gerador/ClientForm.jsx'
-import BudgetCart from '../components/gerador/BudgetCart.jsx'
-import Conditions from '../components/gerador/Conditions.jsx'
-import Totals from '../components/gerador/Totals.jsx'
-import PrintSheet from '../components/gerador/PrintSheet.jsx'
-import PreviewModal from '../components/gerador/PreviewModal.jsx'
+import { useState } from 'react'
+import { BudgetProvider } from '../context/BudgetContext'
+import { useBudget } from '../context/budget-context'
+import { fmtBRL } from '../data/pricebook'
+
+import AppHeader from '../components/app/AppHeader'
+import CategoryTabs from '../components/gerador/CategoryTabs'
+import Configurator from '../components/gerador/Configurator'
+import Simulator from '../components/gerador/Simulator'
+import ClientForm from '../components/gerador/ClientForm'
+import BudgetCart from '../components/gerador/BudgetCart'
+import Conditions from '../components/gerador/Conditions'
+import Totals from '../components/gerador/Totals'
+import PrintSheet from '../components/gerador/PrintSheet'
+import PreviewModal from '../components/gerador/PreviewModal'
 
 const TrashIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
   </svg>
 )
+
 const PrintIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6Z" />
   </svg>
 )
+
 const EyeIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
     <circle cx="12" cy="12" r="3" />
   </svg>
 )
+
 const WaIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M21 11.5a8.4 8.4 0 0 1-12.9 7.1L3 21l2.4-5A8.4 8.4 0 1 1 21 11.5Z" />
   </svg>
 )
+
 const CloseIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 6 6 18M6 6l12 12" />
   </svg>
 )
+
 const FabIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M6 6h15l-1.5 9h-12L6 6Zm0 0L5 3H2" />
@@ -64,11 +71,11 @@ function ClearAction() {
   )
 }
 
-function buildWhatsApp({ client, cart, cond, totals }) {
+function buildWhatsApp({ client, cart, cond, totals }: any) {
   let t = '*ORÇAMENTO FASE ESPORTE*\n'
   if (client.name) t += `Cliente: ${client.name}\n`
   t += '\n'
-  cart.forEach((it) => {
+  cart.forEach((it: any) => {
     t += `• ${it.qty}x ${it.desc} — ${fmtBRL(it.unit * it.qty)}\n`
   })
   t += `\n*Total líquido:* ${fmtBRL(totals.net)}\n*Entrada (50%):* ${fmtBRL(totals.entry)}\n`

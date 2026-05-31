@@ -2,13 +2,13 @@
 
 Este documento descreve a especificação técnica detalhada, as regras de negócios, os algoritmos de cálculo de preços, as estruturas de estados e as especificações de interface para o **Gerador de Orçamentos da Fase Esporte**. 
 
-Este documento servirá como a **única fonte da verdade** para a implementação da aplicação React e o seu alinhamento com o Design System.
+Este documento servirá como a **única fonte da verdade** para a implementação da aplicação Next.js com TypeScript e o seu alinhamento com o Design System.
 
 ---
 
 ## 1. Visão Geral do Escopo
 
-A **Fase Esporte** (Teixeira de Freitas - BA) necessita de uma aplicação web de página única (SPA) responsiva e interativa que simplifique a elaboração de orçamentos formais por parte dos vendedores. 
+A **Fase Esporte** (Teixeira de Freitas - BA) necessita de uma aplicação web responsiva e interativa que simplifique a elaboração de orçamentos formais por parte dos vendedores. 
 
 Atualmente, o processo é manual e suscetível a erros de digitação e cálculo ao consultar tabelas Excel complexas. O novo sistema automatizará o cálculo de preços unitários e totais e a geração da descrição técnica da peça, oferecendo um layout profissional otimizado para impressão em A4 (salvar em PDF e enviar no WhatsApp).
 
@@ -20,11 +20,11 @@ O sistema é projetado para operar com o máximo de eficiência, velocidade e ro
 
 ### 2.1. Stack de Tecnologias
 
-1. **React 18+ (SPA)**: Biblioteca declarativa para gerenciamento dinâmico da interface do usuário e estado local/global, garantindo renderizações reativas ultra-rápidas em menos de 5ms.
-2. **Vite**: Bundler e servidor de desenvolvimento ultra-rápido que compila o projeto em arquivos estáticos otimizados para produção.
-3. **Vanilla CSS (Moderno)**: Uso de folhas de estilo customizadas com variáveis nativas CSS para os tokens de design, flexbox, grid layouts, glassmorphism e animações fluidas. A escolha do Vanilla CSS garante controle absoluto sobre a estilização e impede incompatibilidades em navegadores legados.
-4. **React Context API**: Gerenciamento de estado global da aplicação para unificar o carrinho, informações de clientes e a lógica financeira sem a necessidade de bibliotecas externas complexas (Redux/Zustand).
-5. **Lucide React**: Biblioteca de ícones vetoriais modernos, limpos e responsivos.
+1. **Next.js 16+ & React 19 (App Router)**: Framework para produção com renderização reativa e roteamento nativo sob `/src/app`.
+2. **TypeScript 5+**: Tipagem estática estrita para assegurar a consistência dos dados de preços e regras comerciais.
+3. **Vanilla CSS (Moderno)**: Uso de folhas de estilo customizadas com variáveis nativas CSS para os tokens de design, flexbox, grid layouts, glassmorphism e animações fluidas. A escolha do Vanilla CSS garante controle absoluto sobre a estilização e impede incompatibilidades.
+4. **React Context API**: Gerenciamento de estado global da aplicação para unificar o carrinho, informações de clientes e a lógica financeira sem a necessidade de bibliotecas externas complexas.
+5. **Lucide React & Custom Icons**: Biblioteca de ícones vetoriais modernos, limpos e responsivos.
 6. **HTML5 Canvas / CSS Print**: Estrutura de visualização econômica A4 baseada em CSS Print Media para renderização nativa de PDF de altíssima fidelidade.
 
 ---
@@ -35,31 +35,43 @@ A organização das pastas separa as responsabilidades entre dados estruturados,
 
 ```text
 orcamentofase/
-├── public/                   # Arquivos públicos estáticos
-│   └── favicon.ico           # Favicon do app
+├── public/                     # Arquivos públicos estáticos
+│   └── favicon.ico             # Favicon do app
 ├── src/
-│   ├── assets/               # Ativos visuais do projeto
-│   │   ├── logo-branco.svg   # Vetor oficial da marca para telas escurecidas
-│   │   └── logo-preto.svg    # Vetor oficial para telas claras e impressão A4
-│   ├── data/                 # Banco de dados estático
-│   │   └── prices.js         # Dados de preços convertidos do Excel (JSON nativo)
-│   ├── context/              # Gerenciador comercial (Lógica e Estado)
-│   │   └── BudgetContext.jsx # Provedor que unifica carrinho, parcerias e cálculos
-│   ├── components/           # Componentes modulares reutilizáveis
-│   │   ├── ProductSelectors/ # Configuradores de botões por categoria
-│   │   │   ├── KitEsportivoSelector.jsx
-│   │   │   ├── CamisaMalhaSelector.jsx
-│   │   │   ├── EstampaTotalSelector.jsx
-│   │   │   ├── CamisaPPSelector.jsx
-│   │   │   ├── SocialSelector.jsx
-│   │   │   ├── TactelHelancaSelector.jsx
-│   │   │   ├── BandeiraSelector.jsx
-│   │   │   └── AbadaSelector.jsx
-│   │   ├── BudgetCart.jsx    # Tabela dinâmica de itens do orçamento
-│   │   ├── ClientForm.jsx    # Inputs do cliente, descontos e prazos
-│   │   └── PrintLayout.jsx   # Layout oculto A4 que surge na impressão PDF
-│   ├── App.jsx               # Estrutura principal de montagem (Grid de 2 colunas)
-│   ├── index.css             # Tokens do Design System & Estilos globais
+│   ├── app/                    # Rotas e layouts do Next.js (App Router)
+│   │   ├── layout.tsx          # Layout raiz (Fontes, CSS globais e Providers)
+│   │   ├── page.tsx            # Gerador de Orçamentos (Homepage)
+│   │   ├── metricas/           # Página de análise comercial e métricas
+│   │   ├── tabela/             # Página de administração da tabela de preços
+│   │   └── design-system/      # Apresentação interativa do Design System
+│   ├── assets/                 # Ativos visuais do projeto (vetores SVG)
+│   ├── components/             # Componentes modulares reutilizáveis (.tsx)
+│   │   ├── app/                # Componentes estruturais globais (AppHeader.tsx)
+│   │   ├── ds/                 # Componentes do Design System (Nav.tsx)
+│   │   └── gerador/            # Configuradores específicos do gerador de orçamento
+│   │       ├── BudgetCart.tsx
+│   │       ├── ClientForm.tsx
+│   │       ├── Conditions.tsx
+│   │       ├── Configurator.tsx
+│   │       ├── PreviewModal.tsx
+│   │       ├── PrintSheet.tsx
+│   │       ├── Simulator.tsx
+│   │       └── Totals.tsx
+│   ├── context/                # Gerenciador comercial (Lógica e Estado)
+│   │   ├── budget-context.ts
+│   │   └── BudgetContext.tsx
+│   ├── data/                   # Banco de dados e lógica de preços
+│   │   ├── prices.ts
+│   │   └── pricebook.ts
+│   ├── lib/                    # Custom Elements
+│   │   └── image-slot.js
+│   └── styles/                 # Estilos do Design System (.css)
+├── next.config.ts              # Configuração do Next.js
+├── tsconfig.json               # Configuração do TypeScript e Path Alias (@/*)
+├── package.json                # Dependências e scripts do projeto
+├── README.md                   # Manual de desenvolvimento e execução
+└── SPEC.md                     # Esta especificação técnica
+```��   ├── index.css             # Tokens do Design System & Estilos globais
 │   └── main.jsx              # Inicialização do React
 ├── package.json              # Dependências e scripts do projeto
 ├── README.md                 # Manual de desenvolvimento e execução

@@ -1,16 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import AppHeader from '../components/app/AppHeader.jsx'
-import { editSchema, getPB, setPrice, savePB, resetPB } from '../data/pricebook.js'
+"use client"
 
-const KIND_LABEL = {
+import { useEffect, useMemo, useRef, useState } from 'react'
+import AppHeader from '../../components/app/AppHeader'
+import { editSchema, getPB, setPrice, savePB, resetPB, EditSection } from '../../data/pricebook'
+
+const KIND_LABEL: Record<string, string> = {
   kit: 'Kit',
   esportivo: 'Esportivo',
   promocional: 'Promocional',
   abada: 'Abadá · isento de parceria',
 }
-const num = (n) => (Number.isInteger(n) ? n : (n + '').replace('.', ','))
 
-function NumCell({ group, defaultValue, onChange }) {
+const num = (n: any) => (Number.isInteger(n) ? n : (n + '').replace('.', ','))
+
+interface NumCellProps {
+  group: string
+  defaultValue: any
+  onChange: (val: string) => void
+}
+
+function NumCell({ group, defaultValue, onChange }: NumCellProps) {
   const pre = group === 'tamM2' ? '' : 'R$'
   return (
     <div className="pe-num">
@@ -35,11 +44,11 @@ export default function PricesPage() {
   const [active, setActive] = useState(schema[0].catId)
   const [dirty, setDirty] = useState(false)
   const [toast, setToast] = useState({ show: false, text: 'Alterações salvas' })
-  const detailRef = useRef(null)
+  const detailRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!dirty) return
-    const handler = (e) => {
+    const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault()
       e.returnValue = ''
     }
@@ -48,22 +57,27 @@ export default function PricesPage() {
   }, [dirty])
 
   const cat = schema.find((c) => c.catId === active)
+  if (!cat) return null
+
   const pb = getPB()[cat.catId]
 
-  const touch = (catId, group, path, value) => {
+  const touch = (catId: string, group: string, path: any, value: string) => {
     setPrice(catId, group, path, value)
     setDirty(true)
   }
-  const flashToast = (text) => {
+
+  const flashToast = (text: string) => {
     setToast({ show: true, text })
     setTimeout(() => setToast((t) => ({ ...t, show: false })), 1900)
   }
+
   const onSave = () => {
     savePB()
     setDirty(false)
     detailRef.current?.querySelectorAll('.pe-input.changed').forEach((i) => i.classList.remove('changed'))
     flashToast('Alterações salvas')
   }
+
   const onReset = () => {
     if (!window.confirm('Restaurar todos os preços para o padrão da fábrica? As alterações salvas serão perdidas.')) return
     resetPB()
@@ -112,7 +126,7 @@ export default function PricesPage() {
           <div className="pe-side">
             {schema.map((c) => {
               const fields = c.sections.reduce(
-                (n, s) => n + (s.type === 'matrix' ? s.rows.length * s.cols.length : s.type === 'row' ? s.cols.length : s.items.length),
+                (n, s) => n + (s.type === 'matrix' ? (s.rows?.length || 0) * (s.cols?.length || 0) : s.type === 'row' ? (s.cols?.length || 0) : (s.items?.length || 0)),
                 0,
               )
               return (
@@ -141,7 +155,7 @@ export default function PricesPage() {
               <span className="tag tag--partner">{KIND_LABEL[cat.kind]}</span>
             </div>
 
-            {cat.sections.map((sec) => (
+            {cat.sections.map((sec: EditSection) => (
               <div className="panel" key={sec.group}>
                 <div className="pe-section__title">{sec.title}</div>
 
@@ -152,16 +166,16 @@ export default function PricesPage() {
                       <thead>
                         <tr>
                           <th>Item</th>
-                          {sec.cols.map((c2) => (
+                          {sec.cols?.map((c2) => (
                             <th key={c2}>{c2}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {sec.rows.map((row) => (
+                        {sec.rows?.map((row) => (
                           <tr key={row.key}>
                             <td>{row.label}</td>
-                            {sec.cols.map((_, b) => (
+                            {sec.cols?.map((_, b) => (
                               <td key={b}>
                                 <NumCell
                                   group={sec.group}
@@ -184,7 +198,7 @@ export default function PricesPage() {
                       <thead>
                         <tr>
                           <th>Faixa</th>
-                          {sec.cols.map((c2) => (
+                          {sec.cols?.map((c2) => (
                             <th key={c2}>{c2}</th>
                           ))}
                         </tr>
@@ -192,7 +206,7 @@ export default function PricesPage() {
                       <tbody>
                         <tr>
                           <td>Preço base</td>
-                          {sec.cols.map((_, b) => (
+                          {sec.cols?.map((_, b) => (
                             <td key={b}>
                               <NumCell
                                 group={sec.group}
@@ -209,7 +223,7 @@ export default function PricesPage() {
 
                 {sec.type === 'list' && (
                   <div className="pe-list">
-                    {sec.items.map((it) => (
+                    {sec.items?.map((it) => (
                       <div className="pe-field" key={it.key}>
                         <label>{it.label}</label>
                         <NumCell

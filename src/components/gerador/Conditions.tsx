@@ -1,4 +1,6 @@
-import { useBudget } from '../../context/budget-context.js'
+"use client"
+
+import { useBudget } from '../../context/budget-context'
 
 export default function Conditions() {
   const { disc, cond, setDisc, setCond } = useBudget()

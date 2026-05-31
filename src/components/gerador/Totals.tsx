@@ -1,5 +1,7 @@
-import { useBudget } from '../../context/budget-context.js'
-import { fmtBRL } from '../../data/pricebook.js'
+"use client"
+
+import { useBudget } from '../../context/budget-context'
+import { fmtBRL } from '../../data/pricebook'
 
 export default function Totals() {
   const { totals } = useBudget()
