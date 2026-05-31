@@ -1,0 +1,168 @@
+/* ============================================================
+   FASE ESPORTE — COMPONENTES + LAYOUT DO GUIA
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--lh-body);
+  color: var(--text-primary);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.18px;
+  transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+
+h1, h2, h3, .display { font-family: var(--font-display); margin: 0; }
+code, .mono, .num { font-family: var(--font-mono); }
+
+/* ---------- App shell of the guide ---------- */
+.guide { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+
+.nav {
+  position: sticky; top: 0; align-self: start; height: 100vh;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  padding: var(--space-6) var(--space-5);
+  display: flex; flex-direction: column; gap: var(--space-1);
+  overflow-y: auto;
+}
+.nav__logo { height: 30px; margin-bottom: var(--space-2); }
+.nav__logo img { height: 100%; display: block; }
+.nav__tag {
+  font-size: var(--text-cap); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1.5px;
+  margin: 0 0 var(--space-6); font-weight: 600;
+}
+.nav a {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--text-secondary);
+  font-size: var(--text-sm); font-weight: 500;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.nav a:hover { background: var(--hover-wash); color: var(--text-primary); }
+.nav a.active { background: var(--fase-red-12); color: var(--text-primary); box-shadow: inset 2px 0 0 var(--fase-red); }
+.nav a svg { width: 16px; height: 16px; opacity: 0.8; }
+
+.main { padding: 0; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-12);
+  background: color-mix(in srgb, var(--bg-app) 80%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  border-bottom: 1px solid var(--border-color);
+}
+.topbar__title { font-size: var(--text-sm); color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; }
+.topbar__right { display: flex; align-items: center; gap: var(--space-3); }
+
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--bg-input); border: 1px solid var(--border-color);
+  color: var(--text-secondary); cursor: pointer;
+  padding: 8px 14px; border-radius: var(--radius-full);
+  font-family: var(--font-body); font-size: var(--text-sm); font-weight: 600;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.theme-toggle:hover { color: var(--text-primary); border-color: var(--border-color-strong); }
+.theme-toggle svg { width: 16px; height: 16px; }
+
+/* ---------- Sections ---------- */
+section.block { padding: var(--space-16) var(--space-12); border-bottom: 1px solid var(--border-color); scroll-margin-top: 70px; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: var(--text-cap); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 2px; color: var(--fase-red);
+  margin: 0 0 var(--space-3);
+}
+.block > h2 { font-size: var(--text-h2); font-weight: 600; letter-spacing: -0.01em; margin-bottom: var(--space-3); }
+.block > .lede { color: var(--text-secondary); max-width: 62ch; margin: 0 0 var(--space-10); }
+.subhead {
+  font-family: var(--font-display); font-size: var(--text-h3); font-weight: 600;
+  margin: var(--space-10) 0 var(--space-5); color: var(--text-primary);
+}
+.subhead:first-of-type { margin-top: 0; }
+
+/* ---------- Hero ---------- */
+.hero { padding: var(--space-16) var(--space-12) var(--space-12); border-bottom: 1px solid var(--border-color); }
+.hero h1 {
+  font-size: var(--text-h1); font-weight: 800; letter-spacing: -0.03em; line-height: var(--lh-tight);
+  text-wrap: balance;
+}
+.hero h1 em { font-style: normal; color: var(--fase-red); }
+.hero p { color: var(--text-secondary); max-width: 60ch; font-size: 1.0625rem; margin-top: var(--space-5); }
+.hero__meta { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-8); }
+.chip {
+  font-family: var(--font-mono); font-size: var(--text-cap); font-weight: 500;
+  padding: 6px 12px; border-radius: var(--radius-full);
+  border: 1px solid var(--border-color); color: var(--text-secondary); background: var(--bg-input);
+}
+
+/* ---------- Glass panel ---------- */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* ---------- Generic demo frame ---------- */
+.demo {
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+.demo + .demo { margin-top: var(--space-4); }
+.demo__label {
+  font-family: var(--font-mono); font-size: var(--text-cap); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; margin: 0 0 var(--space-4);
+}
+.row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.col { display: flex; flex-direction: column; gap: var(--space-3); }
+.grid { display: grid; gap: var(--space-4); }
+
+/* ============================================================
+   COLOR SWATCHES
+   ============================================================ */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: var(--space-3); }
+.swatch {
+  border: 1px solid var(--border-color); border-radius: var(--radius);
+  overflow: hidden; background: var(--bg-card-solid);
+}
+.swatch__chip { height: 76px; border-bottom: 1px solid var(--border-color); }
+.swatch__body { padding: 10px 12px 12px; }
+.swatch__name { font-size: var(--text-sm); font-weight: 600; }
+.swatch__val { font-family: var(--font-mono); font-size: var(--text-cap); color: var(--text-muted); margin-top: 2px; }
+.swatch__use { font-size: var(--text-cap); color: var(--text-secondary); margin-top: 6px; line-height: 1.4; }
+
+/* ============================================================
+   TYPOGRAPHY SPECIMENS
+   ============================================================ */
+.type-row {
+  display: grid; grid-template-columns: 150px 1fr; gap: var(--space-6);
+  align-items: baseline; padding: var(--space-5) 0; border-top: 1px solid var(--border-color);
+}
+.type-row:last-child { border-bottom: 1px solid var(--border-color); }
+.type-row__meta { font-family: var(--font-mono); font-size: var(--text-cap); color: var(--text-muted); line-height: 1.6; }
+.type-row__meta b { color: var(--text-secondary); font-weight: 600; display: block; }
+.spec-h1 { font-family: var(--font-display); font-size: var(--text-h1); font-weight: 800; letter-spacing: -0.03em; line-height: var(--lh-tight); }
+.spec-h2 { font-family: var(--font-display); font-size: var(--text-h2); font-weight: 600; letter-spacing: -0.01em; }
+.spec-h3 { font-family: var(--font-display); font-size: var(--text-h3); font-weight: 600; }
+.spec-body { font-family: var(--font-body); font-size: var(--text-body); font-weight: 400; }
+.spec-btn { font-family: var(--font-display); font-size: var(--text-btn); font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.spec-mono { font-family: var(--font-mono); font-size: var(--text-mono); font-weight: 500; }
+
+.font-card { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
+.font-spec { padding: var(--space-6); }
+.font-spec__big { font-size: 3rem; line-height: 1; margin-bottom: var(--space-4); }
+.font-spec__name { font-size: var(--text-h3); font-weight: 600; font-family: var(--font-display); }
+.font-spec__role { font-size: var(--text-sm); color: var(--text-secondary); margin-top: 4px; }
+.font-spec__weights { font-family: var(--font-mono); font-size: var(--text-cap); color: var(--text-muted); margin-top: var(--space-3); }
