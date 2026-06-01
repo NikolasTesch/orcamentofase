@@ -13,7 +13,7 @@ export async function GET() {
       orderBy: { sortOrder: 'asc' },
     })
 
-    const bracketIds = brackets.map((b) => b.id)
+    const bracketIds = brackets.map((b: { id: string }) => b.id)
 
     const data: Record<string, any> = {}
     for (const cat of categories) {
