@@ -128,7 +128,7 @@ export default function HistoricoPage() {
   )
 
   return (
-    <PageLayout maxWidth="standard">
+    <PageLayout maxWidth="wide">
       <div className="admin-body">
         <PageHeader
           title="Histórico de orçamentos"

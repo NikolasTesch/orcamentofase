@@ -9,7 +9,7 @@ interface PageLayoutProps {
   className?: string
 }
 
-export default function PageLayout({ children, maxWidth = 'standard', className = '' }: PageLayoutProps) {
+export default function PageLayout({ children, maxWidth = 'wide', className = '' }: PageLayoutProps) {
   return (
     <div className={`app ${className}`}>
       <AppHeader maxWidth={maxWidth} />

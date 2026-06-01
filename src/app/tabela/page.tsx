@@ -160,7 +160,7 @@ export default function PricesPage() {
 
   if (loading) {
     return (
-      <PageLayout maxWidth="standard">
+      <PageLayout maxWidth="wide">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
           <span style={{ color: 'var(--text-muted)' }}>Carregando tabela de preços...</span>
         </div>
@@ -190,7 +190,7 @@ export default function PricesPage() {
   if (!cat || !pb) return null
 
   return (
-    <PageLayout maxWidth="standard">
+    <PageLayout maxWidth="wide">
       <div className="admin-body">
         <PageHeader
           title="Tabela de preços"

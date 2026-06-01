@@ -86,7 +86,7 @@ export default function ConfigPage() {
   )
 
   return (
-    <PageLayout maxWidth="standard">
+    <PageLayout maxWidth="wide">
       <div className="admin-body">
         <PageHeader
           title="Configurações da empresa"

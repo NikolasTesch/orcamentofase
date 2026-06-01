@@ -144,7 +144,7 @@ export default function MetricsPage() {
   )
 
   return (
-    <PageLayout maxWidth="standard">
+    <PageLayout maxWidth="wide">
       <div className="admin-body">
         <PageHeader
           title="Desempenho comercial"

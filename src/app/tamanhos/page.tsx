@@ -126,7 +126,7 @@ export default function SizesPage() {
 
   if (loading) {
     return (
-      <PageLayout maxWidth="standard">
+      <PageLayout maxWidth="wide">
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
           <span style={{ color: 'var(--text-muted)' }}>Carregando grades de tamanhos...</span>
         </div>
@@ -153,7 +153,7 @@ export default function SizesPage() {
   )
 
   return (
-    <PageLayout maxWidth="standard">
+    <PageLayout maxWidth="wide">
       <div className="admin-body">
         <PageHeader
           title="Grades de tamanhos"
