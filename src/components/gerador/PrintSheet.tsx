@@ -29,7 +29,7 @@ const dec = (n: number) => n.toFixed(2).replace('.', ',')
 
 /* Folha A4 do orçamento (porta updateSheet de app.js). Lê o estado comercial. */
 export function A4Body() {
-  const { cart, client, cond, totals, settings, savedBudgetNumber } = useBudget()
+  const { cart, client, cond, totals, settings, savedBudgetNumber, notes } = useBudget()
   const now = new Date()
   const partnerNote = client.partnership !== 'Nenhuma' && totals.partnerDisc > 0
   const budgetNum = savedBudgetNumber
@@ -118,6 +118,11 @@ export function A4Body() {
           {partnerNote && (
             <div style={{ marginTop: 6 }}>
               *INCLUSA LOGO DA FASE NA FRENTE E COSTAS EM DESTAQUE, EXCETO CAMISAS DE FORMANDOS.
+            </div>
+          )}
+          {notes && (
+            <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #e5e7eb' }}>
+              <b>Observações:</b> {notes}
             </div>
           )}
         </div>

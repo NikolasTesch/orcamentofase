@@ -105,18 +105,6 @@ export function getSizes(): Record<string, SizeChart> {
   return SIZES
 }
 
-export function setSizeValue(chartId: string, sizeKey: string, cellIndex: number, value: string) {
-  const chart = SIZES[chartId]
-  if (!chart || !chart.rows[sizeKey]) return
-  chart.rows[sizeKey][cellIndex] = value
-}
-
-export function setSizeObs(chartId: string, obs: string) {
-  const chart = SIZES[chartId]
-  if (!chart) return
-  chart.obs = obs
-}
-
 export function updateSizesFromServer(data: any) {
   if (!data) return
   // data do banco relacional: { camisa_normal: { chartId, label, obs, columns, rows } }
