@@ -6,7 +6,74 @@
    ============================================================ */
 
 // localStorage removido — fonte única: banco relacional via /api/pricebook e /api/partners
-import defaultPricebook from './defaults/pricebook.json'
+// DEFAULT_PB: fallback local (em sync com src/data/defaults/pricebook.json, que é .gitignore'd)
+const DEFAULT_PB = {
+  kit_esportivo: {
+    kit:        { prata: 128, ouro: 150, prof: 170, escolinha: 133 },
+    extras:     { nome: 5, colete: 22, goleiro: 10, meiao: 20, sem_manga: -2 },
+    acessorios: { bolsao: 130, bolsa_massagem: 150, squeeze: 10 },
+    individuais: { camisa_arbitro: 73, short_arbitro: 55, bermuda: 65, colete_estampado: 43, colete_duplo: 58 },
+  },
+  camisa_malha: {
+    tecMatrix: {
+      PP:    [44, 41, 38, 36, 34],
+      PV:    [52, 48, 45, 42, 40],
+      DRY:   [61, 57, 53, 50, 47],
+      PIQUET:[66, 62, 58, 54, 51],
+    },
+    gola:   { polo: 4, redonda: 0, v: 0 },
+    extras: { ml: 4, bolso: 5, reflex: 7, nome: 6, lapela: 5 },
+  },
+  estampa_total: {
+    areaMatrix: {
+      fc_manga: [86, 80, 74, 69, 65],
+      fc:       [71, 66, 61, 57, 54],
+      frente:   [57, 53, 49, 46, 44],
+    },
+    gola:   { redonda: 0, v: 0, polo: 4 },
+    tecido: { PP: 0, DRY: 5, CAMB: 9 },
+    extras: { nome: 6, sm: -3, mll: 4, mle: 12 },
+  },
+  camisa_pp: {
+    baseRow: [24, 21, 19, 17, 16],
+    cor:     { branca: 0, cores: 5 },
+    config:  { fc: 5, pc: 3 },
+    area:    { lisa: 0, frente: 7, costas: 7, peito: 5 },
+    fotos:   { ff: 40, ffc: 45 },
+  },
+  social: {
+    peca:   { jaleco: 49, calca: 56, mc: 62, ml: 68, blazer: 142 },
+    tecido: { Unioffice: 0, Ibiza: 14 },
+    extras: { frisos: 7, revel: 6, bordado: 12 },
+  },
+  tactel_helanca: {
+    linha:  { Tactel: 0, Helanca: 8 },
+    peca:   { short: 34, bermuda: 41, calca: 56, jaqueta: 84, agasalho: 129 },
+    faixa:  { Adulto: 0, Infantil: -9 },
+    extras: { stamp: 13, bolso: 6 },
+  },
+  bandeira: {
+    acab:   { simples: 50, dupla: 80 },
+    extras: { haste: 70, base: 90, costura: 22 },
+  },
+  abada: {
+    baseRow: [28, 26, 24, 22, 20],
+    tecido:  { cacharel: 0, dry: 6 },
+    extras:  { bandana: 5 },
+  },
+  personalizacao: {
+    serig_fotolito: { grande: 19.30, pequeno: 9.60 },
+    serig_tinta_g:  { '1': 2.00, '2': 2.60, '3': 3.00, '4': 3.40, '5': 3.90, '6': 4.40, '7': 5.00 },
+    serig_tinta_p:  { '1': 1.00, '2': 1.30, '3': 1.50, '4': 1.70, '5': 1.95, '6': 2.20, '7': 2.50 },
+    serig_desc:     { grande: 0.50, pequeno: 0.40 },
+    estampa_g:      { f1: 3.70, f2: 3.20, f3: 3.00, f4: 2.70 },
+    estampa_p:      { f1: 1.90, f2: 1.60, f3: 1.50, f4: 1.30 },
+    bordado_p:      { direto: 10.00, sublimatico: 10.00, nome: 12.80 },
+    bordado_g:      { costas_nome: 16.10, costas_chapado: 26.80, costas_sublimado: 21.40 },
+    dtf_g:          { f1: 30.00, f2: 25.00, f3: 15.00, f4: 12.00 },
+    dtf_p:          { f1: 15.00, f2: 10.00, f3: 5.00,  f4: 4.00 },
+  },
+} as const
 
 export interface Bracket {
   label: string
@@ -61,8 +128,8 @@ const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 export const fmtBRL = (n: number): string => BRL.format(n || 0)
 const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o))
 
-/* ---- estado mutável — fonte única: banco via /api/pricebook; fallback: pricebook.json ---- */
-let PB: Record<string, any> = clone(defaultPricebook)
+/* ---- estado mutável — fonte única: banco via /api/pricebook; fallback: DEFAULT_PB ---- */
+let PB: Record<string, any> = clone(DEFAULT_PB)
 
 function deepMerge(base: any, over: any): any {
   for (const k in over) {
@@ -89,7 +156,7 @@ export const getPBLabels = () => PB_LABELS
 
 export function updatePBFromServer(data: any, labels?: Record<string, Record<string, string>>) {
   if (!data) return
-  PB = deepMerge(clone(defaultPricebook), data)
+  PB = deepMerge(clone(DEFAULT_PB), data)
   if (labels) PB_LABELS = labels
   subs.forEach((f) => f())
 }
