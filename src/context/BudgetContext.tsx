@@ -87,7 +87,10 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
 
   /* ---------- edição da configuração da categoria ativa ---------- */
   const selectRadio = useCallback(
-    (key: string, v: any) => setConfig((c) => ({ ...c, [activeCat]: { ...c[activeCat], [key]: v } })),
+    (key: string, v: any) => setConfig((c) => ({
+      ...c,
+      [activeCat]: { ...c[activeCat], [key]: c[activeCat][key] === v ? null : v },
+    })),
     [activeCat],
   )
   const toggleCheck = useCallback(

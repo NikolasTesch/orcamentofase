@@ -6,6 +6,7 @@
    ============================================================ */
 
 // localStorage removido — fonte única: banco relacional via /api/pricebook e /api/partners
+import defaultPricebook from './defaults/pricebook.json'
 
 export interface Bracket {
   label: string
@@ -60,77 +61,8 @@ const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 export const fmtBRL = (n: number): string => BRL.format(n || 0)
 const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o))
 
-/* ---- valores padrão (ajustados) ---- */
-export const DEFAULT_PB: Record<string, any> = {
-  kit_esportivo: {
-    kit: { prata: 128, ouro: 150, prof: 170, escolinha: 133 },
-    extras: { nome: 5, colete: 22, goleiro: 10, meiao: 20, sem_manga: -2 },
-    acessorios: { bolsao: 130, bolsa_massagem: 150, squeeze: 10 },
-    individuais: { camisa_arbitro: 73, short_arbitro: 55, bermuda: 65, colete_estampado: 43, colete_duplo: 37 },
-  },
-  camisa_malha: {
-    tecMatrix: {
-      PP: [44, 41, 38, 36, 34],
-      PV: [52, 48, 45, 42, 40],
-      DRY: [61, 57, 53, 50, 47],
-      PIQUET: [66, 62, 58, 54, 51],
-    },
-    gola: { polo: 4, redonda: 0, v: 0 },
-    extras: { ml: 4, bolso: 5, reflex: 7, nome: 6, lapela: 5 },
-  },
-  estampa_total: {
-    areaMatrix: {
-      fc_manga: [86, 80, 74, 69, 65],
-      fc: [71, 66, 61, 57, 54],
-      frente: [57, 53, 49, 46, 44],
-    },
-    gola: { redonda: 0, v: 0, polo: 4 },
-    tecido: { PP: 0, DRY: 5, CAMB: 9 },
-    extras: { nome: 6, sm: -3, mll: 4, mle: 12 },
-  },
-  camisa_pp: {
-    baseRow: [24, 21, 19, 17, 16],
-    cor: { branca: 0, cores: 5 },
-    config: { fc: 5, pc: 3 },
-    area: { lisa: 0, frente: 7, costas: 7, peito: 5 },
-    fotos: { ff: 40, ffc: 45 },
-  },
-  social: {
-    peca: { jaleco: 49, calca: 56, mc: 62, ml: 68, blazer: 142 },
-    tecido: { Unioffice: 0, Ibiza: 14 },
-    extras: { frisos: 7, revel: 6, bordado: 12 },
-  },
-  tactel_helanca: {
-    linha: { Tactel: 0, Helanca: 8 },
-    peca: { short: 34, bermuda: 41, calca: 56, jaqueta: 84, agasalho: 129 },
-    faixa: { Adulto: 0, Infantil: -9 },
-    extras: { stamp: 13, bolso: 6 },
-  },
-  bandeira: {
-    acab: { simples: 50, dupla: 80 },
-    tamM2: { p: 0.35, m: 1.5, g: 2.6, gg: 6.0 },
-    extras: { haste: 70, base: 90, costura: 22 },
-    wind_banner: { bandeira: 160, haste: 70, base: 90 },
-    politica: { unitario: 30, minQty: 20, largura: 0.90, altura: 0.70 },
-    escanteio: { kitTotal: 40, qtdKit: 4, largura: 0.25, altura: 0.30 },
-  },
-  abada: { baseRow: [28, 26, 24, 22, 20], tecido: { cacharel: 0, dry: 6 }, extras: { bandana: 5 } },
-  personalizacao: {
-    serig_fotolito: { grande: 19.30, pequeno: 9.60 },
-    serig_tinta_g:  { '1': 2.00, '2': 2.60, '3': 3.00, '4': 3.40, '5': 3.90, '6': 4.40, '7': 5.00 },
-    serig_tinta_p:  { '1': 1.00, '2': 1.30, '3': 1.50, '4': 1.70, '5': 1.95, '6': 2.20, '7': 2.50 },
-    serig_desc:     { grande: 0.50, pequeno: 0.40 },
-    estampa_g:      { f1: 3.70, f2: 3.20, f3: 3.00, f4: 2.70 },
-    estampa_p:      { f1: 1.90, f2: 1.60, f3: 1.50, f4: 1.30 },
-    bordado_p:      { direto: 10.00, sublimatico: 10.00, nome: 12.80 },
-    bordado_g:      { costas_nome: 16.10, costas_chapado: 26.80, costas_sublimado: 21.40 },
-    dtf_g:          { f1: 30.00, f2: 25.00, f3: 15.00, f4: 12.00 },
-    dtf_p:          { f1: 15.00, f2: 10.00, f3: 5.00, f4: 4.00 },
-  },
-}
-
-/* ---- estado mutável — fonte única: banco via /api/pricebook ---- */
-let PB = clone(DEFAULT_PB)
+/* ---- estado mutável — fonte única: banco via /api/pricebook; fallback: pricebook.json ---- */
+let PB: Record<string, any> = clone(defaultPricebook)
 
 function deepMerge(base: any, over: any): any {
   for (const k in over) {
@@ -151,9 +83,14 @@ export function subscribe(fn: () => void) {
 
 export const getPB = () => PB
 
-export function updatePBFromServer(data: any) {
+/* ---- labels dos itens (subKey → displayLabel), carregados do banco ---- */
+let PB_LABELS: Record<string, Record<string, string>> = {}
+export const getPBLabels = () => PB_LABELS
+
+export function updatePBFromServer(data: any, labels?: Record<string, Record<string, string>>) {
   if (!data) return
-  PB = deepMerge(clone(DEFAULT_PB), data)
+  PB = deepMerge(clone(defaultPricebook), data)
+  if (labels) PB_LABELS = labels
   subs.forEach((f) => f())
 }
 
@@ -190,7 +127,8 @@ const ico = {
   pers: 'M3 17.25V21h3.75l11.06-11.06-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z',
 }
 
-const lbl = (sel: CategorySelector, v: string): string => {
+const lbl = (sel: CategorySelector, v: string | null | undefined): string => {
+  if (v === null || v === undefined) return '—'
   const o = sel.options.find((o) => o.v === v)
   return o ? o.label : v
 }
@@ -281,11 +219,11 @@ export const CATEGORIES: Category[] = [
           { v: 'short_arbitro', label: 'Short de Árbitro' },
           { v: 'bermuda', label: 'Bermuda Hidronatic' },
           { v: 'colete_estampado', label: 'Colete Estampado Simples' },
-          { v: 'colete_duplo', label: 'Colete Duplo Numerado' },
+          { v: 'colete_duplo', label: 'Colete Duplo Estampado' },
         ],
       },
     ],
-    defaults: { kit: 'prata', extras: [], acessorio: 'none', individual: 'none' },
+    defaults: { kit: null, extras: [], acessorio: null, individual: null },
     price(st: any) {
       const ind = N(this.id, 'individuais', st.individual)
       const acs = N(this.id, 'acessorios', st.acessorio)
@@ -349,12 +287,12 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { gola: 'polo', tecido: 'PV', extras: ['ml'] },
+    defaults: { gola: null, tecido: null, extras: [] },
     price(st: any, b: number | null) {
       return M(this.id, 'tecMatrix', st.tecido, b || 0) + N(this.id, 'gola', st.gola) + sumC(this.id, 'extras', st.extras)
     },
     describe(st: any) {
-      let d = `CAMISA MALHA - ${lbl(this.selectors[0], st.gola)} - Tecido ${st.tecido}`
+      let d = `CAMISA MALHA - ${lbl(this.selectors[0], st.gola)} - Tecido ${st.tecido || '—'}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
       return d
@@ -409,7 +347,7 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { area: 'fc', gola: 'redonda', tecido: 'DRY', extras: [] },
+    defaults: { area: null, gola: null, tecido: null, extras: [] },
     price(st: any, b: number | null) {
       return (
         M(this.id, 'areaMatrix', st.area, b || 0) +
@@ -419,7 +357,7 @@ export const CATEGORIES: Category[] = [
       )
     },
     describe(st: any) {
-      let d = `CAMISA SUBLIMADA TOTAL - ${lbl(this.selectors[1], st.gola)} - Tecido ${st.tecido} - Estampa ${lbl(this.selectors[0], st.area)}`
+      let d = `CAMISA SUBLIMADA TOTAL - ${lbl(this.selectors[1], st.gola)} - Tecido ${st.tecido || '—'} - Estampa ${lbl(this.selectors[0], st.area)}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
       return d
@@ -471,7 +409,7 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { cor: 'branca', config: 'pc', area: 'lisa', fotos: [] },
+    defaults: { cor: null, config: null, area: null, fotos: [] },
     price(st: any, b: number | null) {
       return (
         R(this.id, 'baseRow', b || 0) +
@@ -527,12 +465,12 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { peca: 'mc', tecido: 'Unioffice', extras: [] },
+    defaults: { peca: null, tecido: null, extras: [] },
     price(st: any) {
       return N(this.id, 'peca', st.peca) + N(this.id, 'tecido', st.tecido) + sumC(this.id, 'extras', st.extras)
     },
     describe(st: any) {
-      let d = `${lbl(this.selectors[0], st.peca)} - Tecido ${st.tecido}`
+      let d = `${lbl(this.selectors[0], st.peca)} - Tecido ${st.tecido || '—'}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' + ' + e.join(' + ')
       return d
@@ -585,12 +523,12 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { linha: 'Tactel', peca: 'bermuda', faixa: 'Adulto', extras: [] },
+    defaults: { linha: null, peca: null, faixa: null, extras: [] },
     price(st: any) {
       return N(this.id, 'peca', st.peca) + N(this.id, 'linha', st.linha) + N(this.id, 'faixa', st.faixa) + sumC(this.id, 'extras', st.extras)
     },
     describe(st: any) {
-      let d = `${lbl(this.selectors[1], st.peca)} de ${st.linha} - Linha ${st.faixa}`
+      let d = `${lbl(this.selectors[1], st.peca)} de ${st.linha || '—'} - Linha ${st.faixa || '—'}`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' - ' + e.join(' - ')
       return d
@@ -642,7 +580,7 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { acab: 'simples', largura: 1.50, altura: 1.00, extras: [] },
+    defaults: { acab: null, largura: 1.50, altura: 1.00, extras: [] },
     price(st: any) {
       const area = Math.max(0, (st.largura || 0) * (st.altura || 0))
       return N(this.id, 'acab', st.acab) * area + sumC(this.id, 'extras', st.extras)
@@ -680,7 +618,7 @@ export const CATEGORIES: Category[] = [
         options: [{ v: 'bandana', label: 'Com Bandana' }],
       },
     ],
-    defaults: { tecido: 'dry', extras: [] },
+    defaults: { tecido: null, extras: [] },
     price(st: any, b: number | null) {
       return R(this.id, 'baseRow', b || 0) + N(this.id, 'tecido', st.tecido) + sumC(this.id, 'extras', st.extras)
     },
@@ -746,7 +684,7 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { tecnica: 'serigrafia', tam: 'grande', cores: '1', tipo_bord: 'direto' },
+    defaults: { tecnica: null, tam: null, cores: null, tipo_bord: null },
     price(st: any) {
       const qty = Math.max(st.qty || 1, 1)
 
@@ -806,17 +744,23 @@ export const computeUnit = (cat: Category, st: any): number =>
   Math.max(0, cat.price(st, cat.brackets ? bracketIndex(st.qty || 0) : null))
 
 /* ---- meta de exibição no configurador ---- */
-export function metaFor(catId: string, key: string, v: string): string {
+export function metaFor(catId: string, key: string, v: string | null | undefined): string {
+  if (v === null || v === undefined || v === 'none') return ''
   const pb = PB[catId]
   if (!pb) return ''
   if ((catId === 'camisa_malha' && key === 'tecido') || (catId === 'estampa_total' && key === 'area')) return 'base'
   if (catId === 'bandeira' && key === 'acab') return 'R$' + pb.acab[v] + '/m²'
-  if (pb[key] && typeof pb[key][v] === 'number') {
-    const n = pb[key][v]
+  // selector keys may differ from PB group keys
+  const pbKey =
+    catId === 'kit_esportivo' && key === 'acessorio' ? 'acessorios' :
+    catId === 'kit_esportivo' && key === 'individual' ? 'individuais' :
+    key
+  if (pb[pbKey] && typeof pb[pbKey][v] === 'number') {
+    const n = pb[pbKey][v]
     if (
-      (catId === 'kit_esportivo' && (key === 'kit' || key === 'acessorios' || key === 'individuais')) ||
-      (catId === 'social' && key === 'peca') ||
-      (catId === 'tactel_helanca' && key === 'peca')
+      (catId === 'kit_esportivo' && (pbKey === 'kit' || pbKey === 'acessorios' || pbKey === 'individuais')) ||
+      (catId === 'social' && pbKey === 'peca') ||
+      (catId === 'tactel_helanca' && pbKey === 'peca')
     )
       return 'R$' + n
     if (n === 0) return 'base'
@@ -857,9 +801,13 @@ const GROUP_TITLE: Record<string, string> = {
   dtf_p: 'DTF · Pequena (por faixa de qtd)',
 }
 
-const GROUP_SELECTOR: Record<string, string> = { tecMatrix: 'tecido', areaMatrix: 'area', tamM2: 'tam' }
+const GROUP_SELECTOR: Record<string, string> = { tecMatrix: 'tecido', areaMatrix: 'area' }
 
 function subLabel(catId: string, group: string, subKey: string): string {
+  // PB_LABELS tem prioridade (editados pelo usuário no banco)
+  const pk = `${catId}.${group}`
+  if (PB_LABELS[pk]?.[subKey]) return PB_LABELS[pk][subKey]
+  // Fallback: buscar no CATEGORIES selectors
   const cat = getCat(catId)
   if (!cat) return subKey
   const selKey = GROUP_SELECTOR[group] || group

@@ -39,12 +39,36 @@ function NumCell({ group, defaultValue, onChange }: NumCellProps) {
   )
 }
 
-// Mapa de patches pendentes: catId.group.keyPath -> { groupId, subKey, bracketId, value }
-type PricePatch = { groupId: string; subKey: string | null; bracketId: string | null; value: number }
+function LabelCell({ defaultValue, onChange }: { defaultValue: string; onChange: (v: string) => void }) {
+  return (
+    <input
+      className="pe-label-input"
+      type="text"
+      defaultValue={defaultValue}
+      title="Editar nome do item"
+      onChange={(e) => {
+        e.target.classList.add('changed')
+        onChange(e.target.value)
+      }}
+    />
+  )
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+    </svg>
+  )
+}
+
+type PricePatch =
+  | { kind: 'price'; groupId: string; subKey: string | null; bracketId: string | null; value: number }
+  | { kind: 'label'; groupId: string; subKey: string; label: string }
 
 export default function PricesPage() {
   const [loading, setLoading] = useState(true)
-  const [groupMap, setGroupMap] = useState<Record<string, any>>({}) // catKey.groupKey -> group with id
+  const [groupMap, setGroupMap] = useState<Record<string, any>>({})
   const [rev, setRev] = useState(0)
   const schema = useMemo(() => editSchema(), [rev])
   const [active, setActive] = useState(schema[0]?.catId || '')
@@ -65,7 +89,7 @@ export default function PricesPage() {
         fetch('/api/pricebook/groups').then((r) => r.json()).catch(() => ({ success: false })),
       ])
       if (pbRes.success && pbRes.data) {
-        updatePBFromServer(pbRes.data)
+        updatePBFromServer(pbRes.data, pbRes.labels || {})
         setRev((r) => r + 1)
       }
       if (groupRes.success && groupRes.data) {
@@ -92,7 +116,6 @@ export default function PricesPage() {
   const touch = (catId: string, group: string, path: any, value: string) => {
     const v = parseFloat(value)
     if (isNaN(v)) return
-    // Atualiza memória local via pricebook in-memory (para exibição imediata)
     const node = getPB()[catId]?.[group]
     if (node) {
       if (Array.isArray(node)) node[path] = v
@@ -101,10 +124,9 @@ export default function PricesPage() {
     }
     setDirty(true)
 
-    // Acumula patch para envio ao banco
     const gData = groupMap[`${catId}.${group}`]
     if (gData) {
-      const patch: PricePatch = { groupId: gData.id, subKey: null, bracketId: null, value: v }
+      const patch: PricePatch = { kind: 'price', groupId: gData.id, subKey: null, bracketId: null, value: v }
       if (Array.isArray(path)) {
         patch.subKey = path[0]
         patch.bracketId = gData.bracketIds?.[path[1]] || null
@@ -114,10 +136,41 @@ export default function PricesPage() {
         patch.subKey = path
       }
       setPendingPatches((prev) => {
-        const idx = prev.findIndex((p) => p.groupId === patch.groupId && p.subKey === patch.subKey && p.bracketId === patch.bracketId)
+        const idx = prev.findIndex((p) => p.kind === 'price' && p.groupId === patch.groupId && p.subKey === patch.subKey && p.bracketId === patch.bracketId)
         if (idx >= 0) return prev.map((p, i) => (i === idx ? patch : p))
         return [...prev, patch]
       })
+    }
+  }
+
+  const touchLabel = (catId: string, group: string, subKey: string, label: string) => {
+    setDirty(true)
+    const gData = groupMap[`${catId}.${group}`]
+    if (!gData) return
+    const patch: PricePatch = { kind: 'label', groupId: gData.id, subKey, label }
+    setPendingPatches((prev) => {
+      const idx = prev.findIndex((p) => p.kind === 'label' && p.groupId === gData.id && p.subKey === subKey)
+      if (idx >= 0) return prev.map((p, i) => (i === idx ? patch : p))
+      return [...prev, patch]
+    })
+  }
+
+  const onDeleteEntry = async (catId: string, group: string, subKey: string, label: string) => {
+    if (!confirm(`Remover "${label}" permanentemente da tabela de preços?\n\nEsta ação não pode ser desfeita.`)) return
+    const gData = groupMap[`${catId}.${group}`]
+    if (!gData) return
+    try {
+      await fetch('/api/pricebook/entry', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId: gData.id, subKey }),
+      })
+      await loadPricebook()
+      setPendingPatches([])
+      setDirty(false)
+      flashToast('Item removido')
+    } catch {
+      flashToast('Erro ao remover item')
     }
   }
 
@@ -137,7 +190,7 @@ export default function PricesPage() {
       }
       setPendingPatches([])
       setDirty(false)
-      detailRef.current?.querySelectorAll('.pe-input.changed').forEach((i) => i.classList.remove('changed'))
+      detailRef.current?.querySelectorAll('.pe-input.changed, .pe-label-input.changed').forEach((i) => i.classList.remove('changed'))
       flashToast('Alterações salvas no banco')
     } catch {
       flashToast('Erro de conexão ao salvar no banco')
@@ -145,14 +198,14 @@ export default function PricesPage() {
   }
 
   const onReset = async () => {
-    if (!window.confirm('Restaurar todos os preços para o padrão? As alterações salvas serão perdidas.')) return
+    if (!window.confirm('Restaurar todos os preços e nomes para o padrão? As alterações salvas serão perdidas.')) return
     try {
       await fetch('/api/pricebook', { method: 'DELETE' })
       await loadPricebook()
       setPendingPatches([])
       setDirty(false)
       setRev((r) => r + 1)
-      flashToast('Preços restaurados ao padrão')
+      flashToast('Preços e nomes restaurados ao padrão')
     } catch {
       flashToast('Erro ao restaurar preços')
     }
@@ -168,6 +221,7 @@ export default function PricesPage() {
     )
   }
 
+  const patchCount = pendingPatches.length
   const actions = (
     <>
       <button type="button" className="btn btn--ghost" onClick={onReset}>
@@ -182,7 +236,7 @@ export default function PricesPage() {
           <path d="M5 3h11l3 3v15H5V3Z" />
           <path d="M8 3v6h7M8 21v-7h8v7" />
         </svg>
-        {pendingPatches.length > 0 ? `Salvar (${pendingPatches.length})` : 'Salvar alterações'}
+        {patchCount > 0 ? `Salvar (${patchCount})` : 'Salvar alterações'}
       </button>
     </>
   )
@@ -194,7 +248,7 @@ export default function PricesPage() {
       <div className="admin-body">
         <PageHeader
           title="Tabela de preços"
-          subtitle="Ajuste valores base por faixa de volume, acréscimos de gola/tecido e opcionais. As alterações são salvas no banco de dados."
+          subtitle="Edite preços e nomes dos itens. Clique no nome para renomear, no lixo para remover um item."
           eyebrow="Administração · preços 2024"
           actions={actions}
         />
@@ -238,18 +292,26 @@ export default function PricesPage() {
 
                 {sec.type === 'matrix' && (
                   <>
-                    <div className="pe-section__sub">Valores em R$ por unidade, conforme a faixa de quantidade.</div>
+                    <div className="pe-section__sub">Valores em R$ por unidade, conforme a faixa de quantidade. Clique no nome para renomear.</div>
                     <table className="pe-matrix">
                       <thead>
                         <tr>
                           <th>Item</th>
                           {sec.cols?.map((c2) => <th key={c2}>{c2}</th>)}
+                          <th style={{ width: 32 }}></th>
                         </tr>
                       </thead>
                       <tbody>
                         {sec.rows?.map((row) => (
                           <tr key={row.key}>
-                            <td>{row.label}</td>
+                            <td className="pe-matrix__label-cell">
+                              <div className="pe-matrix__label-row">
+                                <LabelCell
+                                  defaultValue={row.label}
+                                  onChange={(v) => touchLabel(cat.catId, sec.group, row.key, v)}
+                                />
+                              </div>
+                            </td>
                             {sec.cols?.map((_, b) => (
                               <td key={b}>
                                 <NumCell
@@ -259,6 +321,16 @@ export default function PricesPage() {
                                 />
                               </td>
                             ))}
+                            <td>
+                              <button
+                                type="button"
+                                className="pe-delete-btn"
+                                title={`Remover ${row.label}`}
+                                onClick={() => onDeleteEntry(cat.catId, sec.group, row.key, row.label)}
+                              >
+                                <TrashIcon />
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -298,7 +370,20 @@ export default function PricesPage() {
                   <div className="pe-list">
                     {sec.items?.map((it) => (
                       <div className="pe-field" key={it.key}>
-                        <label>{it.label}</label>
+                        <div className="pe-field__head">
+                          <LabelCell
+                            defaultValue={it.label}
+                            onChange={(v) => touchLabel(cat.catId, sec.group, it.key, v)}
+                          />
+                          <button
+                            type="button"
+                            className="pe-delete-btn"
+                            title={`Remover ${it.label}`}
+                            onClick={() => onDeleteEntry(cat.catId, sec.group, it.key, it.label)}
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
                         <NumCell
                           group={sec.group}
                           defaultValue={pb[sec.group]?.[it.key]}

@@ -3,17 +3,18 @@ import { prisma } from '../../../lib/prisma'
 
 export async function GET() {
   try {
-    const categories = await prisma.priceCategory.findMany({
-      include: {
-        groups: {
-          include: {
-            entries: { include: { bracket: true } },
+    const [categories, labelSettings] = await Promise.all([
+      prisma.priceCategory.findMany({
+        include: {
+          groups: {
+            include: { entries: { include: { bracket: true } } },
+            orderBy: { sortOrder: 'asc' },
           },
-          orderBy: { sortOrder: 'asc' },
         },
-      },
-      orderBy: { sortOrder: 'asc' },
-    })
+        orderBy: { sortOrder: 'asc' },
+      }),
+      prisma.settings.findUnique({ where: { id: 'priceLabels' } }),
+    ])
 
     const pb: Record<string, any> = {}
     for (const cat of categories) {
@@ -39,18 +40,50 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ success: true, data: pb })
+    // Constrói mapa de labels: catKey.groupKey -> { subKey: label }
+    const labelsRaw = (labelSettings?.data as Record<string, Record<string, string>>) || {}
+    const labels: Record<string, Record<string, string>> = {}
+    for (const cat of categories) {
+      for (const group of cat.groups) {
+        const groupLabels = labelsRaw[group.id]
+        if (groupLabels && Object.keys(groupLabels).length > 0) {
+          labels[`${cat.catKey}.${group.groupKey}`] = groupLabels
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, data: pb, labels })
   } catch (error: any) {
     console.error('Failed to fetch pricebook:', error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
 
-// Atualiza uma PriceEntry específica
-// Body: { groupId, subKey, bracketId, value }
 export async function POST(request: Request) {
   try {
-    const { groupId, subKey, bracketId, value } = await request.json()
+    const body = await request.json()
+    const { kind } = body
+
+    // Atualiza label de um subKey
+    if (kind === 'label') {
+      const { groupId, subKey, label } = body
+      if (!groupId || !subKey || label === undefined) {
+        return NextResponse.json({ success: false, error: 'groupId, subKey e label obrigatórios' }, { status: 400 })
+      }
+      const current = await prisma.settings.findUnique({ where: { id: 'priceLabels' } })
+      const data = ((current?.data || {}) as Record<string, Record<string, string>>)
+      if (!data[groupId]) data[groupId] = {}
+      data[groupId][subKey] = label
+      await prisma.settings.upsert({
+        where: { id: 'priceLabels' },
+        create: { id: 'priceLabels', data },
+        update: { data },
+      })
+      return NextResponse.json({ success: true })
+    }
+
+    // Atualiza valor de preço (comportamento original)
+    const { groupId, subKey, bracketId, value } = body
     if (!groupId || value === undefined) {
       return NextResponse.json({ success: false, error: 'groupId e value são obrigatórios' }, { status: 400 })
     }
@@ -72,7 +105,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Re-seed PriceEntries a partir do pricebook.json
+// Re-seed PriceEntries + limpa órfãos + reseta labels
 export async function DELETE() {
   try {
     const fs = require('fs')
@@ -80,9 +113,7 @@ export async function DELETE() {
     const pb = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'src/data/defaults/pricebook.json'), 'utf-8'))
     const brackets = await prisma.priceBracket.findMany({ orderBy: { sortOrder: 'asc' } })
 
-    const categories = await prisma.priceCategory.findMany({
-      include: { groups: true },
-    })
+    const categories = await prisma.priceCategory.findMany({ include: { groups: true } })
 
     for (const cat of categories) {
       const catData = pb[cat.catKey]
@@ -92,6 +123,12 @@ export async function DELETE() {
         if (!rawData) continue
 
         if (group.groupType === 'SCALAR') {
+          const validKeys = Object.keys(rawData as Record<string, number>)
+          // Deletar entradas órfãs (subKeys não existentes no pricebook.json)
+          await prisma.priceEntry.deleteMany({
+            where: { groupId: group.id, subKey: { notIn: validKeys } },
+          })
+          // Restaurar valores
           for (const [subKey, value] of Object.entries(rawData as Record<string, number>)) {
             const existing = await prisma.priceEntry.findFirst({ where: { groupId: group.id, subKey, bracketId: null } })
             if (existing) await prisma.priceEntry.update({ where: { id: existing.id }, data: { value: value as number } })
@@ -105,6 +142,10 @@ export async function DELETE() {
             else await prisma.priceEntry.create({ data: { groupId: group.id, bracketId: brackets[i]?.id, value: arr[i] } })
           }
         } else if (group.groupType === 'BRACKET_MATRIX') {
+          const validKeys = Object.keys(rawData as Record<string, number[]>)
+          await prisma.priceEntry.deleteMany({
+            where: { groupId: group.id, subKey: { notIn: validKeys } },
+          })
           for (const [subKey, arr] of Object.entries(rawData as Record<string, number[]>)) {
             for (let i = 0; i < (arr as number[]).length; i++) {
               const existing = await prisma.priceEntry.findFirst({ where: { groupId: group.id, subKey, bracketId: brackets[i]?.id } })
@@ -115,6 +156,9 @@ export async function DELETE() {
         }
       }
     }
+
+    // Reseta labels para os defaults
+    await prisma.settings.deleteMany({ where: { id: 'priceLabels' } })
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

@@ -42,6 +42,28 @@
 .pe-matrix .pe-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .pe-matrix .pe-input[type="number"] { -moz-appearance: textfield; }
 
+/* ---- Label editing ---- */
+.pe-label-input { width: 100%; font-size: 12px; font-weight: 500; color: var(--text-secondary); background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 3px 6px; transition: all var(--dur-fast) var(--ease-out); cursor: text; min-width: 0; }
+.pe-label-input:hover { border-color: var(--border-color); background: var(--bg-input); }
+.pe-label-input:focus { outline: none; border-color: var(--border-color-active); background: var(--bg-input); box-shadow: var(--shadow-glow-soft); }
+.pe-label-input.changed { border-color: var(--color-warning); background: var(--bg-input); }
+
+/* ---- Delete button ---- */
+.pe-delete-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-muted); cursor: pointer; flex: none; opacity: 0; transition: all var(--dur-fast) var(--ease-out); padding: 0; }
+.pe-delete-btn:hover { background: rgba(220,38,38,0.1); color: var(--color-danger, #dc2626); }
+.pe-delete-btn svg { width: 13px; height: 13px; }
+.pe-field:hover .pe-delete-btn,
+.pe-matrix tr:hover .pe-delete-btn { opacity: 1; }
+
+/* ---- List field header (label + delete) ---- */
+.pe-field__head { display: flex; align-items: center; gap: 2px; margin-bottom: 5px; min-height: 26px; }
+.pe-field__head .pe-label-input { flex: 1; }
+
+/* ---- Matrix label cell ---- */
+.pe-matrix__label-cell { white-space: nowrap; min-width: 160px; }
+.pe-matrix__label-row { display: flex; align-items: center; gap: 4px; }
+.pe-matrix__label-row .pe-label-input { width: 150px; }
+
 .saved-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(24px); background: var(--color-success); color: #052b20; font-weight: 700; padding: 12px 22px; border-radius: var(--radius-full); box-shadow: var(--shadow-lg); opacity: 0; transition: all var(--dur-slow) var(--ease-out); z-index: 90; font-size: var(--text-sm); pointer-events: none; }
 .saved-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
