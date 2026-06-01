@@ -64,7 +64,9 @@ const clone = <T>(o: T): T => JSON.parse(JSON.stringify(o))
 export const DEFAULT_PB: Record<string, any> = {
   kit_esportivo: {
     kit: { prata: 128, ouro: 150, prof: 170, escolinha: 133 },
-    extras: { nome: 5, colete: 22, goleiro: 10, meiao: 20 },
+    extras: { nome: 5, colete: 22, goleiro: 10, meiao: 20, sem_manga: -2 },
+    acessorios: { bolsao: 130, bolsa_massagem: 150, squeeze: 10 },
+    individuais: { camisa_arbitro: 73, short_arbitro: 55, bermuda: 65, colete_estampado: 43, colete_duplo: 37 },
   },
   camisa_malha: {
     tecMatrix: {
@@ -113,6 +115,18 @@ export const DEFAULT_PB: Record<string, any> = {
     escanteio: { kitTotal: 40, qtdKit: 4, largura: 0.25, altura: 0.30 },
   },
   abada: { baseRow: [28, 26, 24, 22, 20], tecido: { cacharel: 0, dry: 6 }, extras: { bandana: 5 } },
+  personalizacao: {
+    serig_fotolito: { grande: 19.30, pequeno: 9.60 },
+    serig_tinta_g:  { '1': 2.00, '2': 2.60, '3': 3.00, '4': 3.40, '5': 3.90, '6': 4.40, '7': 5.00 },
+    serig_tinta_p:  { '1': 1.00, '2': 1.30, '3': 1.50, '4': 1.70, '5': 1.95, '6': 2.20, '7': 2.50 },
+    serig_desc:     { grande: 0.50, pequeno: 0.40 },
+    estampa_g:      { f1: 3.70, f2: 3.20, f3: 3.00, f4: 2.70 },
+    estampa_p:      { f1: 1.90, f2: 1.60, f3: 1.50, f4: 1.30 },
+    bordado_p:      { direto: 10.00, sublimatico: 10.00, nome: 12.80 },
+    bordado_g:      { costas_nome: 16.10, costas_chapado: 26.80, costas_sublimado: 21.40 },
+    dtf_g:          { f1: 30.00, f2: 25.00, f3: 15.00, f4: 12.00 },
+    dtf_p:          { f1: 15.00, f2: 10.00, f3: 5.00, f4: 4.00 },
+  },
 }
 
 /* ---- estado mutável — fonte única: banco via /api/pricebook ---- */
@@ -173,6 +187,7 @@ const ico = {
   tactel: 'M8 3h8v6l3 3v9H5v-9l3-3V3Z',
   bandeira: 'M5 3v18M5 4h11l-2 4 2 4H5',
   abada: 'M9 4 4 9l5 11h6l5-11-5-5-3 2-3-2Z',
+  pers: 'M3 17.25V21h3.75l11.06-11.06-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z',
 }
 
 const lbl = (sel: CategorySelector, v: string): string => {
@@ -194,8 +209,12 @@ export interface CategoryOption {
 export interface CategorySelector {
   key: string
   label: string
-  type: 'radio' | 'check'
+  type: 'radio' | 'check' | 'number'
   options: CategoryOption[]
+  min?: number
+  max?: number
+  step?: number
+  unit?: string
 }
 
 export interface Category {
@@ -235,17 +254,54 @@ export const CATEGORIES: Category[] = [
         type: 'check',
         options: [
           { v: 'nome', label: 'Nome Individual (+R$5)' },
-          { v: 'colete', label: 'Colete' },
+          { v: 'colete', label: 'Colete Numerado' },
           { v: 'goleiro', label: 'Goleiro Manga Longa (+R$10)' },
           { v: 'meiao', label: 'Meia Cano Longo' },
+          { v: 'sem_manga', label: 'Sem Manga (−R$2)' },
+        ],
+      },
+      {
+        key: 'acessorio',
+        label: 'Acessório de Time',
+        type: 'radio',
+        options: [
+          { v: 'none', label: 'Nenhum' },
+          { v: 'bolsao', label: 'Bolsão de Uniforme' },
+          { v: 'bolsa_massagem', label: 'Bolsa de Massagem' },
+          { v: 'squeeze', label: 'Squeeze' },
+        ],
+      },
+      {
+        key: 'individual',
+        label: 'Peça Individual',
+        type: 'radio',
+        options: [
+          { v: 'none', label: 'Nenhuma' },
+          { v: 'camisa_arbitro', label: 'Camisa de Árbitro' },
+          { v: 'short_arbitro', label: 'Short de Árbitro' },
+          { v: 'bermuda', label: 'Bermuda Hidronatic' },
+          { v: 'colete_estampado', label: 'Colete Estampado Simples' },
+          { v: 'colete_duplo', label: 'Colete Duplo Numerado' },
         ],
       },
     ],
-    defaults: { kit: 'prata', extras: [] },
+    defaults: { kit: 'prata', extras: [], acessorio: 'none', individual: 'none' },
     price(st: any) {
+      const ind = N(this.id, 'individuais', st.individual)
+      const acs = N(this.id, 'acessorios', st.acessorio)
+      if (ind > 0) return ind + sumC(this.id, 'extras', st.extras)
+      if (acs > 0) return acs
       return N(this.id, 'kit', st.kit) + sumC(this.id, 'extras', st.extras)
     },
     describe(st: any) {
+      if (st.individual && st.individual !== 'none') {
+        const label = lbl(this.selectors[3], st.individual)
+        const e = checks(this, 'extras', st)
+        return e.length ? `${label} + ${e.join(', ')}` : label
+      }
+      if (st.acessorio && st.acessorio !== 'none') {
+        return lbl(this.selectors[2], st.acessorio)
+      }
       let d = `KIT ${lbl(this.selectors[0], st.kit).toUpperCase()} Fase Esporte (Camisa Dry, Short Dry, Meião 5 fios)`
       const e = checks(this, 'extras', st)
       if (e.length) d += ' + ' + e.join(', ')
@@ -557,15 +613,23 @@ export const CATEGORIES: Category[] = [
         ],
       },
       {
-        key: 'tam',
-        label: 'Medida',
-        type: 'radio',
-        options: [
-          { v: 'p', label: '0,70 × 0,50 m' },
-          { v: 'm', label: '1,50 × 1,00 m' },
-          { v: 'g', label: '2,00 × 1,30 m' },
-          { v: 'gg', label: '3,00 × 2,00 m' },
-        ],
+        key: 'largura',
+        label: 'Largura',
+        type: 'number',
+        options: [],
+        min: 0.10,
+        step: 0.05,
+        unit: 'm',
+      },
+      {
+        key: 'altura',
+        label: 'Altura (máx. 1,50 m)',
+        type: 'number',
+        options: [],
+        min: 0.10,
+        max: 1.50,
+        step: 0.05,
+        unit: 'm',
       },
       {
         key: 'extras',
@@ -578,14 +642,18 @@ export const CATEGORIES: Category[] = [
         ],
       },
     ],
-    defaults: { acab: 'simples', tam: 'm', extras: [] },
+    defaults: { acab: 'simples', largura: 1.50, altura: 1.00, extras: [] },
     price(st: any) {
-      return N(this.id, 'acab', st.acab) * N(this.id, 'tamM2', st.tam) + sumC(this.id, 'extras', st.extras)
+      const area = Math.max(0, (st.largura || 0) * (st.altura || 0))
+      return N(this.id, 'acab', st.acab) * area + sumC(this.id, 'extras', st.extras)
     },
     describe(st: any) {
-      let d = `Bandeira Sublimada ${lbl(this.selectors[0], st.acab)} - Medida ${lbl(this.selectors[1], st.tam)}`
+      const l = Number(st.largura || 0).toFixed(2).replace('.', ',')
+      const a = Number(st.altura || 0).toFixed(2).replace('.', ',')
+      const tipo = lbl(this.selectors[0], st.acab)
+      let d = `Bandeira Sublimada ${tipo} - Medida ${l} × ${a} m`
       const e = checks(this, 'extras', st)
-      if (e.length) d += ' - ' + e.join(', ') + ' inclusos'
+      if (e.length) d += ' - ' + e.join(' e ') + ' incluso(s)'
       return d
     },
   },
@@ -623,6 +691,112 @@ export const CATEGORIES: Category[] = [
       return d
     },
   },
+  {
+    id: 'personalizacao',
+    label: 'Personalização',
+    icon: ico.pers,
+    kind: 'esportivo',
+    brackets: false,
+    selectors: [
+      {
+        key: 'tecnica',
+        label: 'Técnica',
+        type: 'radio',
+        options: [
+          { v: 'serigrafia', label: 'Serigrafia' },
+          { v: 'estampa', label: 'Estampa Transfer' },
+          { v: 'bordado', label: 'Bordado' },
+          { v: 'dtf', label: 'DTF' },
+        ],
+      },
+      {
+        key: 'tam',
+        label: 'Tamanho (Serig./Estampa/DTF)',
+        type: 'radio',
+        options: [
+          { v: 'grande', label: 'Grande' },
+          { v: 'pequeno', label: 'Pequeno' },
+        ],
+      },
+      {
+        key: 'cores',
+        label: 'Nº de Cores (Serigrafia)',
+        type: 'radio',
+        options: [
+          { v: '1', label: '1 cor' },
+          { v: '2', label: '2 cores' },
+          { v: '3', label: '3 cores' },
+          { v: '4', label: '4 cores' },
+          { v: '5', label: '5 cores' },
+          { v: '6', label: '6 cores' },
+          { v: '7', label: '7+ cores' },
+        ],
+      },
+      {
+        key: 'tipo_bord',
+        label: 'Tipo de Bordado',
+        type: 'radio',
+        options: [
+          { v: 'direto', label: '7,5 cm — Direto' },
+          { v: 'sublimatico', label: '7,5 cm — Sublimático' },
+          { v: 'nome', label: '7,5 cm — c/ Nome' },
+          { v: 'costas_nome', label: '15 cm — Costas Nome' },
+          { v: 'costas_chapado', label: '15 cm — Chapado' },
+          { v: 'costas_sublimado', label: '15 cm — Sublimado' },
+        ],
+      },
+    ],
+    defaults: { tecnica: 'serigrafia', tam: 'grande', cores: '1', tipo_bord: 'direto' },
+    price(st: any) {
+      const qty = Math.max(st.qty || 1, 1)
+
+      if (st.tecnica === 'serigrafia') {
+        const foto = N(this.id, 'serig_fotolito', st.tam)
+        const coresNum = Math.min(parseInt(st.cores) || 1, 7)
+        const tintaKey = st.tam === 'grande' ? 'serig_tinta_g' : 'serig_tinta_p'
+        const tinta = N(this.id, tintaKey, String(coresNum)) - (qty > 25 ? N(this.id, 'serig_desc', st.tam) : 0)
+        return Math.max(0, (foto * coresNum) / qty + tinta)
+      }
+
+      if (st.tecnica === 'estampa') {
+        const grp = st.tam === 'grande' ? 'estampa_g' : 'estampa_p'
+        const k = qty <= 24 ? 'f1' : qty <= 54 ? 'f2' : qty <= 104 ? 'f3' : 'f4'
+        return N(this.id, grp, k)
+      }
+
+      if (st.tecnica === 'bordado') {
+        const t = st.tipo_bord || 'direto'
+        const grp = ['direto', 'sublimatico', 'nome'].includes(t) ? 'bordado_p' : 'bordado_g'
+        return N(this.id, grp, t)
+      }
+
+      if (st.tecnica === 'dtf') {
+        const grp = st.tam === 'grande' ? 'dtf_g' : 'dtf_p'
+        const k = qty <= 4 ? 'f1' : qty <= 9 ? 'f2' : qty <= 49 ? 'f3' : 'f4'
+        return N(this.id, grp, k)
+      }
+
+      return 0
+    },
+    describe(st: any) {
+      const tamLbl = st.tam === 'grande' ? 'Grande' : 'Pequeno'
+      const coresNum = parseInt(st.cores) || 1
+
+      if (st.tecnica === 'serigrafia') {
+        return `SERIGRAFIA — ${tamLbl} · ${st.cores || '1'} cor${coresNum > 1 ? 'es' : ''}`
+      }
+      if (st.tecnica === 'estampa') {
+        return `ESTAMPA TRANSFER — ${tamLbl}`
+      }
+      if (st.tecnica === 'bordado') {
+        return `BORDADO — ${lbl(this.selectors[3], st.tipo_bord)}`
+      }
+      if (st.tecnica === 'dtf') {
+        return `DTF — ${tamLbl}`
+      }
+      return 'PERSONALIZAÇÃO'
+    },
+  },
 ]
 
 export const getCat = (id: string) => CATEGORIES.find((c) => c.id === id)
@@ -636,11 +810,14 @@ export function metaFor(catId: string, key: string, v: string): string {
   const pb = PB[catId]
   if (!pb) return ''
   if ((catId === 'camisa_malha' && key === 'tecido') || (catId === 'estampa_total' && key === 'area')) return 'base'
-  if (catId === 'bandeira' && key === 'tam') return (pb.tamM2[v] + '').replace('.', ',') + ' m²'
   if (catId === 'bandeira' && key === 'acab') return 'R$' + pb.acab[v] + '/m²'
   if (pb[key] && typeof pb[key][v] === 'number') {
     const n = pb[key][v]
-    if ((catId === 'kit_esportivo' && key === 'kit') || (catId === 'social' && key === 'peca') || (catId === 'tactel_helanca' && key === 'peca'))
+    if (
+      (catId === 'kit_esportivo' && (key === 'kit' || key === 'acessorios' || key === 'individuais')) ||
+      (catId === 'social' && key === 'peca') ||
+      (catId === 'tactel_helanca' && key === 'peca')
+    )
       return 'R$' + n
     if (n === 0) return 'base'
     return (n > 0 ? '+R$' : '−R$') + Math.abs(n)
@@ -666,6 +843,18 @@ const GROUP_TITLE: Record<string, string> = {
   linha: 'Linha',
   acab: 'Acabamento · R$ por m²',
   tamM2: 'Medida · área em m²',
+  acessorios: 'Acessórios de Time',
+  individuais: 'Peças Individuais',
+  serig_fotolito: 'Serigrafia · Fotolito por tamanho',
+  serig_tinta_g: 'Serigrafia · Consumo Tinta Grande (por nº cores)',
+  serig_tinta_p: 'Serigrafia · Consumo Tinta Pequena (por nº cores)',
+  serig_desc: 'Serigrafia · Desconto tinta acima de 25 peças',
+  estampa_g: 'Estampa Transfer · Grande (por faixa de qtd)',
+  estampa_p: 'Estampa Transfer · Pequena (por faixa de qtd)',
+  bordado_p: 'Bordado 7,5 cm · por tipo',
+  bordado_g: 'Bordado 15 cm · por tipo',
+  dtf_g: 'DTF · Grande (por faixa de qtd)',
+  dtf_p: 'DTF · Pequena (por faixa de qtd)',
 }
 
 const GROUP_SELECTOR: Record<string, string> = { tecMatrix: 'tecido', areaMatrix: 'area', tamM2: 'tam' }

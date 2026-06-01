@@ -7,19 +7,6 @@ import { getSizes } from '../../data/sizes'
 import MeasurementSvg from './MeasurementSvg'
 import logoAllWhite from '../../assets/logo-fase-allwhite.svg'
 
-declare module 'react' {
-  namespace JSX {
-    interface IntrinsicElements {
-      'image-slot': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        id?: string
-        shape?: string
-        radius?: string
-        placeholder?: string
-      }
-    }
-  }
-}
-
 const MESES = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
@@ -27,9 +14,9 @@ const MESES = [
 const MON = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
 const dec = (n: number) => n.toFixed(2).replace('.', ',')
 
-/* Folha A4 do orçamento (porta updateSheet de app.js). Lê o estado comercial. */
+/* Folha A4 do orçamento. Lê o estado comercial. */
 export function A4Body() {
-  const { cart, client, cond, totals, settings, savedBudgetNumber, notes } = useBudget()
+  const { cart, client, cond, totals, settings, savedBudgetNumber, notes, attachedImages } = useBudget()
   const now = new Date()
   const partnerNote = client.partnership !== 'Nenhuma' && totals.partnerDisc > 0
   const budgetNum = savedBudgetNumber
@@ -66,16 +53,51 @@ export function A4Body() {
             {now.getDate()} de {MESES[now.getMonth()]} de {now.getFullYear()}
           </div>
         </div>
-        <div className="a4__material">
-          <image-slot
-            id="a4-material"
-            shape="rounded"
-            radius="6"
-            placeholder="Imagem do material solicitado"
-          ></image-slot>
-          <span className="a4__material-cap">Imagem do material solicitado</span>
-        </div>
+
+        {/* Imagens do material — mostra até 3 no cabeçalho */}
+        {attachedImages.length > 0 ? (
+          <div className="a4__material">
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {attachedImages.slice(0, 3).map((src, idx) => (
+                <img
+                  key={idx}
+                  src={src}
+                  alt={`Material ${idx + 1}`}
+                  style={{ width: attachedImages.length === 1 ? 120 : 72, height: attachedImages.length === 1 ? 90 : 72, objectFit: 'cover', borderRadius: 5, border: '1px solid #ddd' }}
+                />
+              ))}
+              {attachedImages.length > 3 && (
+                <div style={{ width: 72, height: 72, borderRadius: 5, border: '1px solid #ddd', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#888', fontWeight: 600 }}>
+                  +{attachedImages.length - 3}
+                </div>
+              )}
+            </div>
+            <span className="a4__material-cap">Material solicitado</span>
+          </div>
+        ) : (
+          <div className="a4__material">
+            <div style={{ width: 120, height: 90, borderRadius: 5, border: '1px dashed #ccc', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#aaa' }}>
+              sem imagem
+            </div>
+            <span className="a4__material-cap">Imagem do material solicitado</span>
+          </div>
+        )}
       </div>
+
+      {/* Imagens extras (4+) em linha separada */}
+      {attachedImages.length > 3 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+          {attachedImages.slice(3).map((src, idx) => (
+            <img
+              key={idx}
+              src={src}
+              alt={`Material ${idx + 4}`}
+              style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 5, border: '1px solid #ddd' }}
+            />
+          ))}
+        </div>
+      )}
+
       <table>
         <thead>
           <tr>
@@ -153,10 +175,10 @@ export function A4Body() {
   )
 }
 
-export function A4SizesPage() {
-  const { selectedSizeChartId, settings } = useBudget()
+export function A4SizesPage({ chartId }: { chartId: string }) {
+  const { settings } = useBudget()
   const sizesData = getSizes()
-  const chart = sizesData[selectedSizeChartId]
+  const chart = sizesData[chartId]
   if (!chart) return null
 
   return (
@@ -176,7 +198,7 @@ export function A4SizesPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '30px', marginTop: '40px', marginBottom: '24px', alignItems: 'center' }}>
-        {/* Table of sizes */}
+        {/* Tabela de tamanhos */}
         <div>
           <table style={{ width: '100%', borderCollapse: 'collapse', border: '2px solid #111' }}>
             <thead>
@@ -196,7 +218,7 @@ export function A4SizesPage() {
                   </td>
                   {cellValues.map((cell, idx) => (
                     <td key={idx} style={{ padding: '10px 12px', border: '1px solid #dddddd', textAlign: 'center', fontSize: '13px', color: '#000000', fontWeight: '500' }}>
-                      {cell}
+                      {(() => { const n = String(cell).replace(/[^0-9.]/g, '').trim(); return n ? `${n} cm` : '—'; })()}
                     </td>
                   ))}
                 </tr>
@@ -205,7 +227,7 @@ export function A4SizesPage() {
           </table>
         </div>
 
-        {/* Drawing SVG */}
+        {/* Diagrama de medição */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#ffffff', padding: '20px', borderRadius: '6px', border: '1px solid #dddddd' }}>
           <div style={{ fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '15px', color: '#111111', letterSpacing: '0.5px' }}>Onde Medir a Peça</div>
           <div style={{ width: '100%', maxWidth: '210px' }}>
@@ -214,7 +236,7 @@ export function A4SizesPage() {
         </div>
       </div>
 
-      {/* Observation Box at bottom */}
+      {/* Observação */}
       <div className="a4__foot" style={{ marginTop: 'auto', display: 'block', padding: '15px', border: '2px dashed #B31217', background: '#fdfbfa', borderRadius: '4px' }}>
         <b style={{ color: '#B31217', textTransform: 'uppercase', fontSize: '11px', display: 'block', marginBottom: '6px', letterSpacing: '0.5px' }}>Observação importante</b>
         <p style={{ fontSize: '11.5px', margin: 0, lineHeight: '1.5', color: '#111111', fontWeight: '500' }}>
@@ -222,7 +244,7 @@ export function A4SizesPage() {
         </p>
       </div>
 
-      {/* Footer bar */}
+      {/* Rodapé */}
       <div className="a4__company-bar" style={{ marginTop: '40px' }}>
         <span>{settings.website} · {settings.phone2}</span>
         <span>Siga nossas redes sociais: {settings.social}</span>
@@ -233,11 +255,13 @@ export function A4SizesPage() {
 
 /* Cópia oculta usada na impressão (visível apenas em @media print). */
 export default function PrintSheet() {
-  const { attachSizes } = useBudget()
+  const { attachSizes, selectedSizeChartIds } = useBudget()
   return (
     <div className="print-sheet">
       <A4Body />
-      {attachSizes && <A4SizesPage />}
+      {attachSizes && selectedSizeChartIds.map(id => (
+        <A4SizesPage key={id} chartId={id} />
+      ))}
     </div>
   )
 }

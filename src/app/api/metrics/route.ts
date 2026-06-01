@@ -80,12 +80,6 @@ export async function GET(request: Request) {
     const period = searchParams.get('period') || '6m'
     const { from, to } = periodRange(period)
 
-    const totalCount = await prisma.budget.count()
-
-    if (totalCount === 0) {
-      return NextResponse.json({ success: true, empty: true })
-    }
-
     // All budgets in period
     const budgets = await prisma.budget.findMany({
       where: { createdAt: { gte: from, lte: to } },

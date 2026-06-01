@@ -67,24 +67,43 @@ export default function Configurator() {
             {sel.label}
             {sel.type === 'check' ? ' · múltipla' : ''}
           </p>
-          <div className="opt-grid">
-            {sel.options.map((o: CategoryOption) => {
-              const selected =
-                sel.type === 'radio' ? st[sel.key] === o.v : (st[sel.key] || []).includes(o.v)
-              return (
-                <OptionButton
-                  key={o.v}
-                  catId={cat.id}
-                  sel={sel}
-                  value={o}
-                  selected={selected}
-                  onClick={() =>
-                    sel.type === 'radio' ? selectRadio(sel.key, o.v) : toggleCheck(sel.key, o.v)
-                  }
-                />
-              )
-            })}
-          </div>
+
+          {sel.type === 'number' ? (
+            <div className="dim-input-row">
+              <input
+                type="number"
+                className={sel.max && (st[sel.key] || 0) > sel.max ? 'warn' : ''}
+                min={sel.min}
+                max={sel.max}
+                step={sel.step ?? 0.01}
+                value={st[sel.key] ?? ''}
+                onChange={(e) => selectRadio(sel.key, parseFloat(e.target.value) || 0)}
+              />
+              {sel.unit && <span className="dim-input__unit">{sel.unit}</span>}
+              {sel.max && (st[sel.key] || 0) > sel.max && (
+                <span className="dim-input__warn">{WarnIcon} máx. {sel.max} m</span>
+              )}
+            </div>
+          ) : (
+            <div className="opt-grid">
+              {sel.options.map((o: CategoryOption) => {
+                const selected =
+                  sel.type === 'radio' ? st[sel.key] === o.v : (st[sel.key] || []).includes(o.v)
+                return (
+                  <OptionButton
+                    key={o.v}
+                    catId={cat.id}
+                    sel={sel}
+                    value={o}
+                    selected={selected}
+                    onClick={() =>
+                      sel.type === 'radio' ? selectRadio(sel.key, o.v) : toggleCheck(sel.key, o.v)
+                    }
+                  />
+                )
+              })}
+            </div>
+          )}
         </div>
       ))}
 

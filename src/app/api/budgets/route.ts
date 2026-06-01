@@ -48,10 +48,13 @@ export async function POST(request: Request) {
       clientName, clientPhone, clientPartnership,
       delivery, validity, notes,
       subtotal, partnerDiscount, discountType, discountValue, additionalDiscount, netTotal, entryValue,
-      attachSizes, selectedSizeChartId,
+      attachSizes, selectedSizeChartIds,
       status = 'open',
       items,
     } = body
+    const selectedSizeChartId = Array.isArray(selectedSizeChartIds)
+      ? selectedSizeChartIds.join(',')
+      : (selectedSizeChartIds || null)
 
     if (!clientName || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: 'clientName e items são obrigatórios' }, { status: 400 })

@@ -51,7 +51,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
   const [disc, setDisc] = useState<DiscountData>({ type: 'percentage', value: 0 })
   const [cond, setCond] = useState<ConditionsData>({ delivery: 30, validity: 7 })
   const [attachSizes, setAttachSizes] = useState<boolean>(false)
-  const [selectedSizeChartId, setSelectedSizeChartId] = useState<string>('camisa_normal')
+  const [selectedSizeChartIds, setSelectedSizeChartIds] = useState<string[]>([])
+  const [attachedImages, setAttachedImages] = useState<string[]>([])
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [savedBudgetNumber, setSavedBudgetNumber] = useState<number | null>(null)
   const [currentBudgetId, setCurrentBudgetId] = useState<string | null>(null)
@@ -227,7 +228,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
             netTotal: totals.net,
             entryValue: totals.entry,
             attachSizes,
-            selectedSizeChartId,
+            selectedSizeChartIds,
             status,
             items: cart.map((it) => ({
               catId: it.catId,
@@ -257,7 +258,7 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
         setBudgetSaving(false)
       }
     },
-    [client, cond, totals, cart, disc, attachSizes, selectedSizeChartId, notes, currentBudgetId],
+    [client, cond, totals, cart, disc, attachSizes, selectedSizeChartIds, notes, currentBudgetId],
   )
 
   const updateBudgetStatus = useCallback(async (id: string, status: 'open' | 'won' | 'lost', statusNotes?: string) => {
@@ -274,6 +275,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     setDisc({ type: 'percentage', value: 0 })
     setCond({ delivery: 30, validity: 7 })
     setAttachSizes(false)
+    setSelectedSizeChartIds([])
+    setAttachedImages([])
     setNotes('')
     setCurrentBudgetId(null)
     setBudgetSaved(false)
@@ -281,47 +284,28 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     setConfig(initialConfig())
   }, [])
 
-  // Auto-detect best match size chart when cart changes
+  // Auto-detect relevant size charts when cart changes
   useEffect(() => {
     if (cart.length === 0) return
 
-    // Detect first item that has specific category
-    const socialItem = cart.find(it => it.catId === 'social')
-    if (socialItem) {
-      setSelectedSizeChartId('camisa_social')
-      return
-    }
+    const ids = new Set<string>()
 
-    const pantsItem = cart.find(it => 
+    if (cart.some(it => it.catId === 'social')) ids.add('camisa_social')
+
+    if (cart.some(it =>
       it.catId === 'tactel_helanca' && (it.snap.peca === 'calca' || it.snap.peca === 'short' || it.snap.peca === 'bermuda')
-    )
-    if (pantsItem) {
-      setSelectedSizeChartId('calca_normal')
-      return
-    }
+    )) ids.add('calca_normal')
 
-    const infantilItem = cart.find(it => 
-      it.snap.faixa === 'Infantil' || it.desc.toLowerCase().includes('infantil')
-    )
-    if (infantilItem) {
-      setSelectedSizeChartId('camisa_infantil')
-      return
-    }
+    if (cart.some(it => it.snap.faixa === 'Infantil' || it.desc.toLowerCase().includes('infantil')))
+      ids.add('camisa_infantil')
 
-    const babyLookItem = cart.find(it => 
-      it.desc.toLowerCase().includes('baby look') || it.desc.toLowerCase().includes('feminino')
-    )
-    if (babyLookItem) {
-      setSelectedSizeChartId('baby_look')
-      return
-    }
+    if (cart.some(it => it.desc.toLowerCase().includes('baby look') || it.desc.toLowerCase().includes('feminino')))
+      ids.add('baby_look')
 
-    const shirtItem = cart.find(it => 
-      ['kit_esportivo', 'camisa_malha', 'estampa_total', 'abada', 'camisa_pp'].includes(it.catId)
-    )
-    if (shirtItem) {
-      setSelectedSizeChartId('camisa_normal')
-    }
+    if (cart.some(it => ['kit_esportivo', 'camisa_malha', 'estampa_total', 'abada', 'camisa_pp'].includes(it.catId)))
+      ids.add('camisa_normal')
+
+    if (ids.size > 0) setSelectedSizeChartIds(Array.from(ids))
   }, [cart])
 
   const value: BudgetContextValue = {
@@ -336,7 +320,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     totals,
     partners: getPartnerNames(),
     attachSizes,
-    selectedSizeChartId,
+    selectedSizeChartIds,
+    attachedImages,
     settings,
     savedBudgetNumber,
     currentBudgetId,
@@ -357,7 +342,8 @@ export function BudgetProvider({ children }: BudgetProviderProps) {
     setDisc: (patch) => setDisc((d) => ({ ...d, ...patch })),
     setCond: (patch) => setCond((c) => ({ ...c, ...patch })),
     setAttachSizes,
-    setSelectedSizeChartId,
+    setSelectedSizeChartIds,
+    setAttachedImages,
     partnerInfo,
     saveBudgetToServer,
     updateBudgetStatus,

@@ -102,11 +102,11 @@ export default function MetricsPage() {
     fetch(`/api/metrics?period=${p}`)
       .then((res) => res.json())
       .then((res) => {
-        if (res.success && !res.empty && res.data) setDbData(res.data)
+        if (res.success && res.data) setDbData(res.data)
         else setDbData(null)
       })
       .catch((err) => {
-        console.error('Error fetching metrics, using mocks:', err)
+        console.error('Error fetching metrics:', err)
         setDbData(null)
       })
       .finally(() => setLoading(false))

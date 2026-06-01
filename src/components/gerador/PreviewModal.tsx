@@ -24,7 +24,7 @@ interface PreviewModalProps {
 
 /* Pré-visualização do A4 em modal (porta openModal/closeModal de app.js). */
 export default function PreviewModal({ open, onClose, onPrint }: PreviewModalProps) {
-  const { attachSizes } = useBudget()
+  const { attachSizes, selectedSizeChartIds } = useBudget()
   return (
     <div
       className={`modal no-print${open ? ' open' : ''}`}
@@ -48,7 +48,9 @@ export default function PreviewModal({ open, onClose, onPrint }: PreviewModalPro
         {open && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             <A4Body />
-            {attachSizes && <A4SizesPage />}
+            {attachSizes && selectedSizeChartIds.map(id => (
+              <A4SizesPage key={id} chartId={id} />
+            ))}
           </div>
         )}
       </div>

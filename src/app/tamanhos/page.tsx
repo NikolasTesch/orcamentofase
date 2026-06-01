@@ -62,13 +62,15 @@ export default function SizesPage() {
   }
 
   const handleCellChange = (cellId: string, value: string, chartKey: string, rowId: string, columnId: string) => {
+    // Armazena apenas o valor numérico — unidade "cm" é implícita
+    const numeric = value.replace(/[^0-9.]/g, '')
     setCharts((prev) => ({
       ...prev,
       [chartKey]: {
         ...prev[chartKey],
         rows: prev[chartKey].rows.map((r) =>
           r.id === rowId
-            ? { ...r, cells: r.cells.map((c) => (c.cellId === cellId ? { ...c, value } : c)) }
+            ? { ...r, cells: r.cells.map((c) => (c.cellId === cellId ? { ...c, value: numeric } : c)) }
             : r
         ),
       },
@@ -193,7 +195,7 @@ export default function SizesPage() {
                 <div className="xl:col-span-7 flex flex-col gap-6">
                   <div className="panel glass-panel">
                     <div className="pe-section__title">Grade de Medidas</div>
-                    <div className="pe-section__sub">Preencha as dimensões correspondentes de cada tamanho (ex: 70 cm).</div>
+                    <div className="pe-section__sub">Preencha apenas o valor numérico de cada medida — a unidade <strong>cm</strong> é implícita.</div>
                     <table className="pe-matrix" style={{ marginTop: 12 }}>
                       <thead>
                         <tr>
@@ -211,17 +213,19 @@ export default function SizesPage() {
                               const cell = row.cells.find((c) => c.columnId === col.id)
                               return (
                                 <td key={col.id}>
-                                  <div className="pe-num" style={{ width: '100%' }}>
+                                  <div className="pe-num">
                                     <input
                                       className="pe-input"
-                                      type="text"
-                                      defaultValue={cell?.value || ''}
-                                      style={{ width: '100%', textIndent: 0, paddingLeft: 12, textAlign: 'center' }}
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      defaultValue={cell?.value ? parseFloat(cell.value) || '' : ''}
                                       onChange={(e) => {
                                         e.target.classList.add('changed')
                                         if (cell) handleCellChange(cell.cellId, e.target.value, activeKey, row.id, col.id)
                                       }}
                                     />
+                                    <span className="suf">cm</span>
                                   </div>
                                 </td>
                               )

@@ -51,7 +51,8 @@ export interface BudgetContextValue {
   totals: TotalsData
   partners: string[]
   attachSizes: boolean
-  selectedSizeChartId: string
+  selectedSizeChartIds: string[]
+  attachedImages: string[]
   settings: AppSettings
   savedBudgetNumber: number | null
   currentBudgetId: string | null
@@ -72,7 +73,8 @@ export interface BudgetContextValue {
   setDisc: (patch: Partial<DiscountData>) => void
   setCond: (patch: Partial<ConditionsData>) => void
   setAttachSizes: (attach: boolean) => void
-  setSelectedSizeChartId: (id: string) => void
+  setSelectedSizeChartIds: (ids: string[]) => void
+  setAttachedImages: (images: string[]) => void
   partnerInfo: (it: CartItem) => { kind: 'exempt' | 'discount' | 'none'; d: number; short?: string }
   saveBudgetToServer: (status?: 'open' | 'won' | 'lost') => Promise<{ success: boolean; data?: any; error?: string }>
   updateBudgetStatus: (id: string, status: 'open' | 'won' | 'lost', notes?: string) => Promise<void>

@@ -121,6 +121,25 @@
 .sel-group + .sel-group { margin-top: var(--space-5); }
 .qty-block { display: flex; align-items: flex-start; gap: var(--space-6); flex-wrap: wrap; }
 
+/* ---------- Input numérico de dimensão ---------- */
+.dim-input-row { display: flex; align-items: center; gap: 10px; }
+.dim-input-row input[type="number"] {
+  width: 120px; padding: 10px 14px;
+  border: 1px solid var(--border-color); border-radius: var(--radius);
+  background: var(--bg-input); color: var(--text-primary);
+  font-family: var(--font-mono); font-size: 1.15rem; font-weight: 500;
+  text-align: right; outline: none;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+  -moz-appearance: textfield;
+}
+.dim-input-row input[type="number"]:focus { border-color: var(--fase-red); box-shadow: 0 0 0 3px var(--fase-red-12); }
+.dim-input-row input[type="number"].warn { border-color: var(--color-warning); box-shadow: 0 0 0 3px var(--color-warning-bg); }
+.dim-input-row input::-webkit-outer-spin-button,
+.dim-input-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.dim-input__unit { font-size: 1rem; font-weight: 700; color: var(--text-secondary); }
+.dim-input__warn { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-cap); font-weight: 600; color: var(--color-warning); }
+.dim-input__warn svg { width: 13px; height: 13px; }
+
 /* ---------- Simulador (rodapé fixo do configurador) ---------- */
 .config-col .simulator { border-radius: var(--radius-lg); border: 1px solid var(--border-color); border-top: 2px solid var(--fase-red); box-shadow: var(--shadow-md); }
 @keyframes priceFlash { 0% { opacity: .35; transform: translateY(3px); } 100% { opacity: 1; transform: none; } }
